@@ -65,7 +65,7 @@
 
 #include <cuda_runtime.h>
 #include <cuda.h>
-
+#include "gray12torgb8.h"
 
 class CUDAProcessorBase : public QObject
 {
@@ -143,14 +143,21 @@ protected:
     template<typename T>
     void InitLut(T & param, unsigned short blackLevel, double scale, const QVector<unsigned short> & linearizationLut = QVector<unsigned short>());
 
-    int fmtCudaMalloc(void *srcBuffer, int maxWidth, int maxHeight, fastSurfaceFormat_t srcSurfaceFmt);
-    int fastCopyToGPU(GPUImage_t *image, void *&srcBuffer, fastSurfaceFormat_t SurfaceFmt, int imgWidth, int imgHeight, bool Packed);
-    int transformToGLBuffer(void *srcBuffer, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt);
+    int fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fastSurfaceFormat_t srcSurfaceFmt);
+    int fastCopyToGPU(GPUImage_t *image, void *ptr, fastSurfaceFormat_t SurfaceFmt, int imgWidth, int imgHeight, bool Packed);
+    int transformToGLBuffer(void *ptr, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt);
 signals:
     void initialized(const QString& info);
     void finished();
     void error();
 protected:
+
+    unsigned mWidth = 0;
+    unsigned mHeight = 0;
+    unsigned mPitch = 0;
+    unsigned mBitsPerChannel = 8;
+    fastSurfaceFormat_t mSurfaceFmt = FAST_RGB8;
+    void *mSrcCpuPtr = nullptr;
 
 };
 template<typename T>

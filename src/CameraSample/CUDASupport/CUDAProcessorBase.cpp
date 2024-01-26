@@ -29,6 +29,12 @@
 #include "CUDAProcessorBase.h"
 #include <QElapsedTimer>
 #include "fastvideo_sdk_define.h"
+#include "jpeglib.h"
+#include <jerror.h>
+
+
+#include <fstream>
+
 
 CUDAProcessorBase::CUDAProcessorBase(QObject* parent) :
     QObject(parent)
@@ -82,67 +88,75 @@ void CUDAProcessorBase::freeFilters()
         cudaFree( srcBuffer );
         srcBuffer  = nullptr;
     }
+    if(mSrcCpuPtr)
+    {
+        free(mSrcCpuPtr);
+        mSrcCpuPtr = nullptr;
+    }
 
 }
 
 // 根据宽，高， 以及图像格式， 申请图像的cuda内存
-int CUDAProcessorBase::fmtCudaMalloc(void *srcBuffer, int maxWidth, int maxHeight, fastSurfaceFormat_t srcSurfaceFmt)
+int CUDAProcessorBase::fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fastSurfaceFormat_t srcSurfaceFmt)
 {
+
+    void * cuda_ptr = nullptr;
+
     cudaError_t ret ;
     if (FAST_I8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char));
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char));
     }
     else if (FAST_RGB8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char) * 3 );
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char) * 3 );
     }
     else if (FAST_I16 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) );
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) );
     }
     else if (FAST_RGB16 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) * 3);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) * 3);
     }
     else if (FAST_I10 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) );
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) );
     }
     else if (FAST_I12 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) );
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) );
     }
     else if (FAST_I14 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) );
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) );
     }
     else if (FAST_BGR8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char) * 3);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char) * 3);
     }
     else if (FAST_RGB12 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned short) * 3);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned short) * 3);
     }
     else if (FAST_BGRX8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char) * 4);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char) * 4);
     }
     else if (FAST_CrCbY8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char) * 3);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char) * 3);
     }
     else if (FAST_YCbCr8 == srcSurfaceFmt)
     {
-        ret = cudaMalloc(&srcBuffer, maxWidth * maxHeight * sizeof(unsigned char) * 3);
+        ret = cudaMalloc(&cuda_ptr, maxWidth * maxHeight * sizeof(unsigned char) * 3);
     }
     // Add support for other surface formats here
-
+    *ptr = cuda_ptr;
     if (ret != cudaSuccess)
     {
         printf("cudaMalloc srcBuffer failed\n");
-        srcBuffer = nullptr;
+        *ptr = nullptr;
         return InitFailed("cudaMalloc failed",FAST_EXECUTION_FAILURE);
     }
     return ret;
@@ -182,8 +196,13 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
     unsigned int maxWidth = options.MaxWidth;
     unsigned int maxHeight = options.MaxHeight;
     
+    if(info)
+        qDebug("format = %u", srcSurfaceFmt);
+
     // 根据maxWidth， maxHeight， 以及srcSurfaceFmt格式， 申请cuda内存    
     fmtCudaMalloc(&srcBuffer, maxWidth, maxHeight, srcSurfaceFmt);
+    mSrcCpuPtr = malloc(maxWidth * maxHeight * 3 * sizeof(unsigned char));
+    
 
 
     // malloc srcBuffer
@@ -193,6 +212,7 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 
     unsigned maxPitch = 3 * ( ( ( options.MaxWidth + FAST_ALIGNMENT - 1 ) / FAST_ALIGNMENT ) * FAST_ALIGNMENT );
     unsigned bufferSize = maxPitch * options.MaxHeight * sizeof(unsigned char);
+    printf("CUDAProcessorBase hGLBuffer:bufferSize %d, w %d, h %d\n", bufferSize, maxWidth, maxHeight);
     if(cudaMalloc( &hGLBuffer, bufferSize ) != cudaSuccess)
     {
         hGLBuffer = nullptr;
@@ -202,43 +222,7 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
     cudaMemoryInfo("Created hGLBuffer");
 
     //JPEG Stuff
-    if( true )
-    {
-        bool haveEnoughGPUMem = false;
-        size_t freeMem = 0;
-        size_t totalMem = 0;
-        cudaMemGetInfo(&freeMem, &totalMem);
 
-        //JPEG encoder needs up to 15 times of RGB image size
-        if(freeMem > maxWidth * maxHeight * 3 * 15)
-            haveEnoughGPUMem = true;
-        else
-            qDebug("Not enough GPU memory for JPEG encoder");
-
-        if(haveEnoughGPUMem)
-        {
-            jfifInfo.restartInterval = options.JpegRestartInterval;
-            jfifInfo.jpegFmt = options.JpegSamplingFmt;
-            jfifInfo.jpegMode =  FAST_JPEG_SEQUENTIAL_DCT;
-            // jpeg
-
-            unsigned pitch = 3 * ( ( ( maxWidth + FAST_ALIGNMENT - 1 ) / FAST_ALIGNMENT ) * FAST_ALIGNMENT );
-
-            try
-            {
-                //fastMalloc(reinterpret_cast<void**>(&jfifInfo.h_Bytestream), pitch * maxHeight * sizeof(unsigned char));
-                hJpegStream.reset(static_cast<unsigned char*>(alloc.allocate(pitch * maxHeight + JPEG_HEADER_SIZE)));
-            }
-            catch(...)
-            {
-                return InitFailed("Cannot allocate memory for JPEG stream",ret);
-            }
-
-            jpegStreamSize = pitch * maxHeight + JPEG_HEADER_SIZE;
-            cudaMemoryInfo("Created hMjpegEncoder");
-
-        }
-    }
 
 
     size_t freeMem  = 0;
@@ -268,108 +252,79 @@ fastStatus_t CUDAProcessorBase::InitFailed(const char *errStr, fastStatus_t ret)
     return ret;
 }
 
-int CUDAProcessorBase::fastCopyToGPU(GPUImage_t *image, void *&srcBuffer, fastSurfaceFormat_t SurfaceFmt, int imgWidth, int imgHeight, bool Packed)
+int CUDAProcessorBase::fastCopyToGPU(GPUImage_t *image, void *dstptr, fastSurfaceFormat_t SurfaceFmt, int imgWidth, int imgHeight, bool Packed)
 {
     //将 GPUImage_t 中的数据，拷贝到GPU内存 srcBuffer 中
     //cuda copy
     cudaError_t ret ;
     if (FAST_I8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char), cudaMemcpyDeviceToDevice);
-        printf("gray");
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char), cudaMemcpyDeviceToDevice);
     }
     else if (FAST_RGB8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_I16 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
     }
     else if (FAST_RGB16 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short) * 3, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_I10 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
     }
     else if (FAST_I12 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
+        
     }
     else if (FAST_I14 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short), cudaMemcpyDeviceToDevice);
     }
     else if (FAST_BGR8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_RGB12 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned short) * 3, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_BGRX8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 4, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 4, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_CrCbY8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
     }
     else if (FAST_YCbCr8 == SurfaceFmt)
     {
-        ret = cudaMemcpy(srcBuffer, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+        ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
     }
     
     return ret; // Return the value of ret
 }
 
 
-int CUDAProcessorBase::transformToGLBuffer(void *srcBuffer, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt)
+int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt)
 {   
-    unsigned char* srcData = reinterpret_cast<unsigned char*>(srcBuffer);
-    unsigned char* dstData = reinterpret_cast<unsigned char*>(hGLBuffer);
-
     if (FAST_BGRX8 == SurfaceFmt)
     {
-        for (int y = 0; y < imgHeight; ++y)
-        {
-            for (int x = 0; x < imgWidth; ++x)
-            {
-                // Assuming the source buffer format is RGBA
-                // Assuming the destination buffer format is RGB8
-                // Copy the RGB components from the source buffer to the destination buffer
-                dstData[(y * imgWidth + x) * 3 + 0] = srcData[(y * imgWidth + x) * 4 + 0]; // R
-                dstData[(y * imgWidth + x) * 3 + 1] = srcData[(y * imgWidth + x) * 4 + 1]; // G
-                dstData[(y * imgWidth + x) * 3 + 2] = srcData[(y * imgWidth + x) * 4 + 2]; // B
-            }
-        }
+
     }
     else if (FAST_RGB8 == SurfaceFmt)
     {
         // Transformation logic for converting from CUDA FAST_RGB8 to OpenGL RGB8
         // copy direct
-        cudaMemcpy(dstData, srcData, imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
-        
     }
     else if (FAST_I8 == SurfaceFmt)
     {
         // Transformation logic for converting from CUDA FAST_I8 to OpenGL RGB8
-        for (int y = 0; y < imgHeight; ++y)
-        {
-            for (int x = 0; x < imgWidth; ++x)
-            {
-                // Assuming the source buffer format is FAST_I8
-                // Assuming the destination buffer format is RGB8
-                // Copy the grayscale value from the source buffer to the RGB components of the destination buffer
-                unsigned char gray = srcData[y * imgWidth + x];
-                dstData[(y * imgWidth + x) * 3 + 0] = gray; // R
-                dstData[(y * imgWidth + x) * 3 + 1] = gray; // G
-                dstData[(y * imgWidth + x) * 3 + 2] = gray; // B
-            }
-        }
     }
     else if (FAST_BGR8 == SurfaceFmt)
     {
@@ -377,6 +332,42 @@ int CUDAProcessorBase::transformToGLBuffer(void *srcBuffer, void* hGLBuffer, int
 
     }
     else if (FAST_I16 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+        // ...
+    }
+    else if (FAST_I12 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA FAST_I12 to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+        convert12BitGrayTo8BitRgb(srcptr, hGLBuffer, imgWidth, imgHeight);
+        
+    }
+    else if (FAST_I14 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+        // ...
+    }
+    else if (FAST_RGB12 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+    }
+    else if (FAST_RGB16 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+        // ...
+    }
+    else if (FAST_YCbCr8 == SurfaceFmt)
+    {
+        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
+        // Modify this code based on the actual formats of the buffers
+        // ...
+    }
+    else if (FAST_CrCbY8 == SurfaceFmt)
     {
         // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
         // Modify this code based on the actual formats of the buffers
@@ -417,7 +408,11 @@ fastStatus_t CUDAProcessorBase::Transform(GPUImage_t *image, CUDAProcessorOption
     fastStatus_t ret = FAST_OK;
     unsigned imgWidth  = image->w;
     unsigned imgHeight = image->h;
-
+    mWidth  = image->w;
+    mHeight = image->h;
+    mPitch  = image->wPitch;
+    mBitsPerChannel = image->bitsPerChannel;
+    mSurfaceFmt = image->surfaceFmt;
     if(imgWidth > opts.MaxWidth || imgHeight > opts.MaxHeight )
         return TransformFailed("Unsupported image size",FAST_INVALID_FORMAT,profileTimer);
 
@@ -479,11 +474,33 @@ fastStatus_t CUDAProcessorBase::Close()
 fastStatus_t CUDAProcessorBase::exportRawData(void* dstPtr, unsigned int &w, unsigned int &h, unsigned int &pitch)
 {
 
+    unsigned bpc = GetBytesPerChannelFromSurface(mSurfaceFmt);
+    w = mWidth;
+    h = mHeight;
+    pitch = mPitch;
+
+    if(dstPtr == nullptr)
+        return FAST_OK;
+
+    cudaMemcpy(dstPtr, srcBuffer, w * h * bpc, cudaMemcpyDeviceToHost);
+
+    // unsigned short*  dstGrayBuffer = (unsigned short*)malloc(mWidth * mHeight * sizeof(unsigned short));
+    // cudaMemcpy(dstGrayBuffer, srcBuffer, mWidth * mHeight * sizeof(unsigned short), cudaMemcpyDeviceToHost);
+    // printf("CUDAProcessorBase exportRawData: %d, w :%d, h: %d \n", dstGrayBuffer[0], mWidth, mHeight);
+    // free(dstGrayBuffer);
+
+    unsigned short * ptr = (unsigned short *)dstPtr;
+    printf("exportRawData:%d\n", ptr[0]);
+
     return FAST_OK;
 }
 
 fastStatus_t CUDAProcessorBase::exportJPEGData(void* dstPtr, unsigned jpegQuality, unsigned& size)
 {
+
+    if(dstPtr == nullptr)
+        return FAST_OK;
+
 
     return FAST_OK;
 }

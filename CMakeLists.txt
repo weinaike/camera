@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.18)
 
 if(NOT WIN32)
-    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.1/bin/nvcc")
+    set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 endif()
 
 project(gpu-camera-sample VERSION 1.0 LANGUAGES CUDA CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+
 
 if(WIN32)
     set(ARCHITECTURE WIN32)
@@ -57,7 +59,7 @@ if(USE_XIMEA)
 endif()
 
 find_path(FastVideo_INC
-    NAMES fastvideo_sdk.h
+    NAMES fastvideo_sdk_define.h
     PATHS ${FastVideo_PATH}/inc/
     REQUIRED)
 

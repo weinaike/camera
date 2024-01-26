@@ -105,6 +105,7 @@ bool PGMCamera::open(uint32_t devID)
     mInputImage.surfaceFmt = mSurfaceFormat;
     mInputImage.wPitch = pitch;
     mInputImage.bitsPerChannel = sampleSize;
+    printf("PGMCamera::open w[%d] h[%d] stride[%d] bitsPerChannel[%d] mSurfaceFormat[%d]\n", width, height, pitch, sampleSize, mSurfaceFormat);
 
     try
     {
@@ -116,6 +117,7 @@ bool PGMCamera::open(uint32_t devID)
     }
 
     memcpy(mInputImage.data.get(), bits, pitch * height);
+    unsigned short* ptr = (unsigned short* )bits;
     a.deallocate(bits);
 
     if(!mInputBuffer.allocate(mWidth, mHeight, mSurfaceFormat))

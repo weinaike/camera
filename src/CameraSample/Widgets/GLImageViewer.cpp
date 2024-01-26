@@ -314,6 +314,7 @@ GLRenderer::GLRenderer(QObject *parent):
     QObject(parent)
 
 {
+    m_format.setVersion(4, 3); 
     m_format.setDepthBufferSize(16);
     m_format.setSwapInterval(1);
     m_format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
@@ -362,7 +363,7 @@ void GLRenderer::initialize()
     m_texUniform = m_program->uniformLocation("tex");
     m_vertPosAttr = m_program->attributeLocation("vertexPosAttr");
     m_texPosAttr = m_program->attributeLocation("texPosAttr");
-
+    printf("*****************\n*****************\n*****************\n%d %d \n*****************\n*****************\n*****************\n", sz.width(), sz.height());
     glDisable(GL_TEXTURE_2D);
 }
 
@@ -547,7 +548,7 @@ void GLRenderer::loadImageInternal(void* img, int width, int height)
 {
     unsigned char *data = NULL;
     size_t pboBufferSize = 0;
-
+    
     cudaError_t error = cudaSuccess;
     // 设置内部图像大小变量
     mImageSize = QSize(width, height);
@@ -559,6 +560,7 @@ void GLRenderer::loadImageInternal(void* img, int width, int height)
     {
         initialize();
         m_initialized = true;
+        
     }
     // 绑定 PBO 并设置其参数
     GLint bsize;

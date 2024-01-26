@@ -121,7 +121,13 @@ endif()
 if(WIN32)
     add_executable(CameraSample WIN32 ${SRC})
 else()
-    add_executable(CameraSample ${SRC})
+    add_executable(CameraSample ${SRC} CUDASupport/gray12torgb8.cu)
+
+    set_target_properties(CameraSample PROPERTIES
+    CXX_STANDARD 11
+    CUDA_STANDARD 11
+    )
+
 endif()
 
 target_link_libraries(CameraSample PRIVATE
