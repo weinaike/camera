@@ -42,7 +42,6 @@ public:
 	~jpeg_encoder();
 
     bool encode(unsigned char* input, int width, int height, int channels, std::vector<uchar>& output, int quality = 60);
-    bool encode(unsigned char* input, int width, int height, int channels, uchar* output, uint &size, int quality = 60);
 
 private:
 

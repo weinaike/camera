@@ -29,9 +29,7 @@
 #include "CUDAProcessorBase.h"
 #include <QElapsedTimer>
 #include "fastvideo_sdk_define.h"
-#include "jpeglib.h"
-#include <jerror.h>
-
+#include "JpegEncoder.h"
 
 #include <fstream>
 
@@ -500,6 +498,14 @@ fastStatus_t CUDAProcessorBase::exportJPEGData(void* dstPtr, unsigned jpegQualit
 
     if(dstPtr == nullptr)
         return FAST_OK;
+    jpeg_encoder enc;
+
+    std::vector <unsigned char > output;
+
+    enc.encode((unsigned char*)mSrcCpuPtr, mWidth, mHeight, 3, output, jpegQuality);
+
+    size = output.size();
+    memcpy(dstPtr, output.data(), size);
 
 
     return FAST_OK;

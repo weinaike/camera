@@ -67,6 +67,8 @@ public:
     QString getLastError(){return mErrStr;}
 
     int getFrameSizes(fastChannelDescription_t fs[3]);
+    int set_hwframe_ctx(AVCodecContext *ctx, AVBufferRef *hw_device_ctx, int width, int height, AVPixelFormat pixfmt);
+
 
 signals:
 

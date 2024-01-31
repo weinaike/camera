@@ -204,11 +204,11 @@ bool jpeg_encoder::encode(unsigned char *input, int width, int height,
 
     my_destination_mgr dest;
 
-//    if (cinfo.dest == nullptr) {	/* first time for this JPEG object? */
-//        cinfo.dest = (struct jpeg_destination_mgr *)
-//                (*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT,
-//                                           sizeof(my_destination_mgr));
-//    }
+   if (cinfo.dest == nullptr) {	/* first time for this JPEG object? */
+       cinfo.dest = (struct jpeg_destination_mgr *)
+               (*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT,
+                                          sizeof(my_destination_mgr));
+   }
 
     cinfo.dest = (struct jpeg_destination_mgr *)&dest;
 
@@ -255,13 +255,6 @@ bool jpeg_encoder::encode(unsigned char *input, int width, int height,
     jpeg_destroy_compress(&cinfo);
 
     return true;
-}
-
-bool jpeg_encoder::encode(unsigned char *input, int width, int height,
-                          int channels, uchar *output, uint &size, int quality)
-{
-    input, width, height, channels, output, size, quality;
-    return false;
 }
 
 #endif

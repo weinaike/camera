@@ -1,7 +1,6 @@
 #include "avfilewriter.h"
 
 #include "common_utils.h"
-#include "vutils.h"
 
 #include <QFileInfo>
 
@@ -39,6 +38,37 @@ void AVFileWriter::setEncodeYUV420Fun(TEncodeFun fun)
 {
     mYUV420Encode = fun;
 }
+
+
+int AVFileWriter::set_hwframe_ctx(AVCodecContext *ctx, AVBufferRef *hw_device_ctx, int width, int height, AVPixelFormat pixfmt)
+{
+    AVBufferRef *hw_frames_ref;
+    AVHWFramesContext *frames_ctx = NULL;
+    int err = 0;
+
+    if (!(hw_frames_ref = av_hwframe_ctx_alloc(hw_device_ctx))) {
+        fprintf(stderr, "Failed to create VAAPI frame context.\n");
+        return -1;
+    }
+    frames_ctx = (AVHWFramesContext *)(hw_frames_ref->data);
+    frames_ctx->format    = AV_PIX_FMT_CUDA;
+    frames_ctx->sw_format = pixfmt;
+    frames_ctx->width     = width;
+    frames_ctx->height    = height;
+    frames_ctx->initial_pool_size = 20;
+    if ((err = av_hwframe_ctx_init(hw_frames_ref)) < 0) {
+        printf("Failed to initialize CUDA frame context. Error code: %d\n", err);
+        av_buffer_unref(&hw_frames_ref);
+        return err;
+    }
+    ctx->hw_frames_ctx = av_buffer_ref(hw_frames_ref);
+    if (!ctx->hw_frames_ctx)
+        err = AVERROR(ENOMEM);
+
+    av_buffer_unref(&hw_frames_ref);
+    return err;
+}
+
 
 bool AVFileWriter::open(int w, int h, int bitrate, int fps, bool isHEVC, const QString& outFileName)
 {

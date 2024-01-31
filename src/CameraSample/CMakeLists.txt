@@ -59,8 +59,6 @@ set(SRC
     RtspServer/common_utils.h
     RtspServer/JpegEncoder.cpp
     RtspServer/JpegEncoder.h
-    RtspServer/vutils.cpp
-    RtspServer/vutils.h
     Widgets/CameraSetupWidget.cpp
     Widgets/CameraSetupWidget.h
     Widgets/CameraSetupWidget.ui

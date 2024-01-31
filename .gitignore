@@ -5,7 +5,6 @@ src/**/x64
 *.zip
 
 GPUCameraSample*
-OtherLibs*
 build-*
 # bin/**/*.lib
 # bin/**/*.iobj
