@@ -74,6 +74,7 @@ public:
 signals:
     void finished();
     void error();
+    void show_image(unsigned char * ptr, int w, int h, int step);
 
 public slots:
 
@@ -88,7 +89,7 @@ private:
     QMutex               mWaitMutex;
     QWaitCondition       mWaitCond;
     bool                 mWake = false;
-    GPUCameraBase*          mCamera = nullptr;
+    GPUCameraBase*       mCamera = nullptr;
     GLRenderer*          mRenderer = nullptr;
     QThread              mCUDAThread;
     float                mRenderFps = 30;

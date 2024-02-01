@@ -521,6 +521,15 @@ void* CUDAProcessorBase::GetFrameBuffer()
         return hGLBuffer;//纯数据，格式要求RGB24位连续存储。
 }
 
+
+void* CUDAProcessorBase::getSrcCpuPtr()
+{
+    if(!mInitialised)
+        return nullptr;
+    else
+        return mSrcCpuPtr;//纯数据，格式要求RGB24位连续存储。
+}
+
 void CUDAProcessorBase::clearExifSections()
 {
     if(jfifInfo.exifSections != nullptr)

@@ -105,7 +105,11 @@ MainWindow::MainWindow(QWidget *parent) :
     mMediaViewer.reset(new GLImageViewer(mRendererPtr.data()));
     mContainerPtr.reset(QWidget::createWindowContainer(mMediaViewer.data()));
     mContainerPtr->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->MediaViewerLayout->insertWidget(0, mContainerPtr.data());
+    // ui->MediaViewerLayout->insertWidget(0, mContainerPtr.data());
+
+    ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
+
+
     mContainerPtr->setMinimumSize(QSize(100, 100));
     mContainerPtr->setFocusPolicy(Qt::NoFocus);
     mRendererPtr->setRenderWnd(mMediaViewer.data());
@@ -351,6 +355,8 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
         //mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
     ui->cameraController->setExposureCamera(30000);
 //    });
+
+    connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->gtgWidget, &GtGWidget::setImage);
 }
 
 void MainWindow::openCamera(uint32_t devID)

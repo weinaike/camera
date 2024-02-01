@@ -92,7 +92,8 @@ public:
     void clearExifSections();
 
     virtual void* GetFrameBuffer();
-
+    
+    void* getSrcCpuPtr();
     virtual bool isGrayscale(){return false;}
     QString getLastErrorDescription(){ return mErrString; }
     fastStatus_t getLastError(){ return mLastError; }

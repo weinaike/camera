@@ -28,9 +28,11 @@
 
 #ifndef GTGWIDGET_H
 #define GTGWIDGET_H
-
+#include <QImage>
+#include <QLabel>
 #include <QWidget>
-
+#include <QPixmap>
+// glass to glass test
 class GtGWidget : public QWidget
 {
     Q_OBJECT
@@ -39,10 +41,16 @@ public:
     void start(){setAnimating(true);}
     void stop(){setAnimating(false);}
 
-private slots:
+    void setImage(unsigned char * ptr, int w, int h, int step) 
+    {
+        QImage img(ptr, w, h, step, QImage::Format_RGB888);
+        *m_pixmap = QPixmap::fromImage(img);
+        update();
+    }
 
 protected:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
+
 
 private:
     void setAnimating(bool enabled);
@@ -50,6 +58,8 @@ private:
     qint64 mLastTime = 0;
     qint64 mStartTime = 0;
     int mTimerInterval = 16;
+
+    QPixmap *m_pixmap;
 };
 
 #endif // GTGWIDGET_H

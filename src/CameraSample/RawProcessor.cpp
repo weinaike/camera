@@ -173,7 +173,12 @@ void RawProcessor::startWorking()
                 emit finished();
             }
         }
-
+        // 在将图片传输给GtGWidget进行实现
+        {
+            // to minimize delay in main thread
+            unsigned char * mSrcCpuPtr = (unsigned char * ) mProcessorPtr->getSrcCpuPtr();
+            emit show_image(mSrcCpuPtr,  mOptions.Width,  mOptions.Height, mOptions.Width * 3);
+        }
         if(mWriting && mFileWriterPtr)
         {
             if(mOptions.Codec == CUDAProcessorOptions::vcJPG ||
