@@ -41,12 +41,13 @@ CUDAProcessorBase::CUDAProcessorBase(QObject* parent) :
     jfifInfo.exifSections = nullptr;
     jfifInfo.exifSectionsCount = 0;
     jpegStreamSize = 0;
-
+#ifdef USE_CUDA
     size_t freeMem  = 0;
     size_t totalMem = 0;
     cudaMemGetInfo(&freeMem, &totalMem);
     stats.insert(QStringLiteral("totalMem"),  totalMem);
     stats.insert(QStringLiteral("freeMem"), freeMem);
+#endif
 
 }
 
@@ -58,7 +59,9 @@ CUDAProcessorBase::~CUDAProcessorBase()
 void CUDAProcessorBase::cudaMemoryInfo(const char *str)
 {
     size_t freeMem, totalMem;
+#ifdef USE_CUDA
     cudaMemGetInfo(&freeMem, &totalMem);
+#endif
     qDebug("%s, free mem\t%zu", str, freeMem);
 }
 
@@ -73,19 +76,26 @@ void CUDAProcessorBase::freeFilters()
    
     mLastError = FAST_OK;
 
-
     clearExifSections();
-
+#ifdef USE_CUDA
     if(hGLBuffer)
     {
         cudaFree( hGLBuffer );
         hGLBuffer  = nullptr;
     }
+#endif    
+
     if(srcBuffer)
     {
+    #ifdef USE_CUDA
         cudaFree( srcBuffer );
+    #else
+        free(srcBuffer);
+    #endif
         srcBuffer  = nullptr;
     }
+
+
     if(mSrcCpuPtr)
     {
         free(mSrcCpuPtr);
@@ -99,7 +109,8 @@ int CUDAProcessorBase::fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fa
 {
 
     void * cuda_ptr = nullptr;
-
+#ifdef USE_CUDA
+    
     cudaError_t ret ;
     if (FAST_I8 == srcSurfaceFmt)
     {
@@ -158,6 +169,9 @@ int CUDAProcessorBase::fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fa
         return InitFailed("cudaMalloc failed",FAST_EXECUTION_FAILURE);
     }
     return ret;
+#endif
+    return 0;
+    
 }
 
 
@@ -165,7 +179,7 @@ int CUDAProcessorBase::fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fa
 fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 {
     fastStatus_t ret;
-    CpuAllocator alloc;
+    MallocAllocator alloc;
 
     if(mInitialised)
     {
@@ -207,7 +221,7 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
     //bufferPtr = &srcBuffer;
 
     //Open GL
-
+#ifdef USE_CUDA
     unsigned maxPitch = 3 * ( ( ( options.MaxWidth + FAST_ALIGNMENT - 1 ) / FAST_ALIGNMENT ) * FAST_ALIGNMENT );
     unsigned bufferSize = maxPitch * options.MaxHeight * sizeof(unsigned char);
     printf("CUDAProcessorBase hGLBuffer:bufferSize %d, w %d, h %d\n", bufferSize, maxWidth, maxHeight);
@@ -220,16 +234,13 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
     cudaMemoryInfo("Created hGLBuffer");
 
     //JPEG Stuff
-
-
-
     size_t freeMem  = 0;
     size_t totalMem = 0;
     cudaMemGetInfo(&freeMem, &totalMem);
 
     stats[QStringLiteral("totalMem")] = totalMem;
     stats[QStringLiteral("freeMem")] = freeMem;
-
+#endif
     emit initialized(QString());
     mInitialised = true;
 
@@ -254,6 +265,7 @@ int CUDAProcessorBase::fastCopyToGPU(GPUImage_t *image, void *dstptr, fastSurfac
 {
     //将 GPUImage_t 中的数据，拷贝到GPU内存 srcBuffer 中
     //cuda copy
+#ifdef USE_CUDA
     cudaError_t ret ;
     if (FAST_I8 == SurfaceFmt)
     {
@@ -304,12 +316,13 @@ int CUDAProcessorBase::fastCopyToGPU(GPUImage_t *image, void *dstptr, fastSurfac
     {
         ret = cudaMemcpy(dstptr, image->data.get(), imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
     }
-    
     return ret; // Return the value of ret
+#endif
+    return 0;    
 }
 
 
-int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt)
+int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* Buffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt)
 {   
     if (FAST_BGRX8 == SurfaceFmt)
     {
@@ -339,7 +352,16 @@ int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* hGLBuffer, int  i
     {
         // Transformation logic for converting from CUDA FAST_I12 to OpenGL RGB8
         // Modify this code based on the actual formats of the buffers
-        convert12BitGrayTo8BitRgb(srcptr, hGLBuffer, imgWidth, imgHeight);
+    #ifdef USE_CUDA
+        convert12BitGrayTo8BitRgb(srcptr, Buffer, imgWidth, imgHeight);
+    #else
+        unsigned short* src = (unsigned short*) srcptr;
+        unsigned char * dst = (unsigned char *) Buffer;
+        for(int i = 0; i < imgWidth * imgHeight; i++) 
+        {
+            dst[i] = src[i] >> 4;
+        }
+    #endif
         
     }
     else if (FAST_I14 == SurfaceFmt)
@@ -420,6 +442,7 @@ fastStatus_t CUDAProcessorBase::Transform(GPUImage_t *image, CUDAProcessorOption
     QElapsedTimer cpuTimer;
     cpuTimer.start();
 
+#ifdef USE_CUDA
     //copy image to GPU
     fastCopyToGPU(image, srcBuffer, opts.SurfaceFmt, imgWidth, imgHeight, opts.Packed);
 
@@ -436,6 +459,10 @@ fastStatus_t CUDAProcessorBase::Transform(GPUImage_t *image, CUDAProcessorOption
     float mcs = float(cpuTimer.nsecsElapsed()) / 1000000.f;
     stats[QStringLiteral("totalGPUCPUTime")] = mcs;
     stats[QStringLiteral("totalGPUTime")] = fullTime;
+
+#endif
+
+
     locker.unlock();
 
     // to minimize delay in main thread
@@ -459,13 +486,14 @@ fastStatus_t CUDAProcessorBase::Close()
 {
     QMutexLocker locker(&mut);
 
+#ifdef USE_CUDA
     size_t freeMem  = 0;
     size_t totalMem = 0;
     cudaMemGetInfo(&freeMem, &totalMem);
 
     stats[QStringLiteral("totalMem")] = totalMem;
     stats[QStringLiteral("freeMem")] = freeMem;
-
+#endif
     return FAST_OK;
 }
 
@@ -480,7 +508,15 @@ fastStatus_t CUDAProcessorBase::exportRawData(void* dstPtr, unsigned int &w, uns
     if(dstPtr == nullptr)
         return FAST_OK;
 
+#ifdef USE_CUDA
     cudaMemcpy(dstPtr, srcBuffer, w * h * bpc, cudaMemcpyDeviceToHost);
+#else
+    if((dstPtr != NULL) && (srcBuffer != NULL))
+    {
+        memcpy(dstPtr, srcBuffer, w * h * bpc);
+    }
+    
+#endif
 
     // unsigned short*  dstGrayBuffer = (unsigned short*)malloc(mWidth * mHeight * sizeof(unsigned short));
     // cudaMemcpy(dstGrayBuffer, srcBuffer, mWidth * mHeight * sizeof(unsigned short), cudaMemcpyDeviceToHost);

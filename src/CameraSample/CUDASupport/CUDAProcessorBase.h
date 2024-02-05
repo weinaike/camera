@@ -33,7 +33,7 @@
 #include <list>
 #include <memory>
 
-#include "CpuAllocator.h"
+#include "MallocAllocator.h"
 
 
 #include <QVector>
@@ -63,9 +63,11 @@
 
 #include "Globals.h"
 
-#include <cuda_runtime.h>
-#include <cuda.h>
-#include "gray12torgb8.h"
+#ifdef USE_CUDA
+    #include <cuda_runtime.h>
+    #include <cuda.h>
+    #include "gray12torgb8.h"
+#endif
 
 class CUDAProcessorBase : public QObject
 {
@@ -130,11 +132,11 @@ protected:
     fastStatus_t        mLastError {};
 
     //Motion Jpeg stuff
-    std::unique_ptr<unsigned char, CpuAllocator> hJpegStream;
+    std::unique_ptr<unsigned char, MallocAllocator> hJpegStream;
     fastJpegEncoderHandle_t hJpegEncoder = nullptr;
     fastJfifInfo_t          jfifInfo{};
     unsigned int            jpegStreamSize;
-    void *                  srcBuffer;
+    void *                  srcBuffer = nullptr;
 
     //OpenGL stuff, 
     //***********************显示需要，重新实现这部分功能，******************

@@ -104,7 +104,7 @@ void CUDAProcessorGray::freeFilters()
 fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
 {
     fastStatus_t ret;
-    CpuAllocator alloc;
+    MallocAllocator alloc;
 
     if(mInitialised)
     {
@@ -154,6 +154,9 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     unsigned maxPitch = 3 * ( ( ( options.MaxWidth + FAST_ALIGNMENT - 1 ) / FAST_ALIGNMENT ) * FAST_ALIGNMENT );
     unsigned bufferSize = maxPitch * options.MaxHeight * sizeof(unsigned char);
     printf("CUDAProcessorGray hGLBuffer:bufferSize %d, w %d, h %d\n", bufferSize, maxWidth, maxHeight);
+
+#ifdef  USE_CUDA
+
     if(cudaMalloc( &hGLBuffer, bufferSize ) != cudaSuccess)
     {
         hGLBuffer = nullptr;
@@ -178,6 +181,8 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     stats[QStringLiteral("freeMem")] = freeMem;
     stats[QStringLiteral("allocatedMem")] = requestedMemSpace;
     stats[QStringLiteral("elapsedTime")] = mcs;
+
+#endif
 
     emit initialized(QString());
     mInitialised = true;
@@ -222,6 +227,9 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
     if(imgWidth > opts.MaxWidth || imgHeight > opts.MaxHeight )
         return TransformFailed("Unsupported image size",FAST_INVALID_FORMAT,profileTimer);
 
+    
+#ifdef USE_CUDA
+
     //copy image to GPU
     fastCopyToGPU(image, srcBuffer, opts.SurfaceFmt, imgWidth, imgHeight, opts.Packed);
     
@@ -241,6 +249,11 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
     {
         cudaDeviceSynchronize();
     }
+#else
+    transformToGLBuffer(image->data.get(), mSrcCpuPtr, imgWidth, imgHeight, opts.SurfaceFmt);
+#endif
+
+
 
     locker.unlock();
 

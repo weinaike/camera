@@ -21,4 +21,9 @@ public:
 	void operator()(void* p) {
 		free(p);
 	}
+
+	static void Copy(unsigned char* dst, unsigned char* src, const size_t count)
+	{
+		memcpy(dst, src, count);
+	}
 };

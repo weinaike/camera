@@ -62,7 +62,12 @@ bool CircularBuffer::allocate(int width, int height, fastSurfaceFormat_t format)
         mImages[i].bitsPerChannel = bpc;
         try
         {
-			mImages[i].data.reset(static_cast<unsigned char*>(CudaAllocator::allocate(bytesAlloc)));
+            #ifdef USE_CUDA
+                mImages[i].data.reset(static_cast<unsigned char*>(CudaAllocator::allocate(bytesAlloc)));
+            #else
+                MallocAllocator a;
+			    mImages[i].data.reset(static_cast<unsigned char*>(a.allocate(bytesAlloc)));
+            #endif
         }
         catch(...)
         {

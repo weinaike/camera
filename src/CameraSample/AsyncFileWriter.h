@@ -35,7 +35,7 @@
 #include <QThread>
 
 #include "AsyncQueue.h"
-#include "CpuAllocator.h"
+#include "MallocAllocator.h"
 #include "MJPEGEncoder.h"
 #include <memory>
 
@@ -83,7 +83,7 @@ protected:
 
     unsigned mBufferSize {0};
     unsigned mCurrentBuffer{0};
-    std::vector<std::unique_ptr<unsigned char, CpuAllocator>> mBuffers;
+    std::vector<std::unique_ptr<unsigned char, MallocAllocator>> mBuffers;
 
     QMutex mLock;
     QWaitCondition mStart;

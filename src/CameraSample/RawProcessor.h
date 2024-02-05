@@ -51,6 +51,7 @@ class RawProcessor : public QObject
     Q_OBJECT
 public:
     explicit RawProcessor(GPUCameraBase* camera, GLRenderer* renderer);
+    explicit RawProcessor(GPUCameraBase* camera);
     ~RawProcessor();
 
     fastStatus_t init();

@@ -34,8 +34,8 @@
 #include <QMutex>
 #include <QMutexLocker>
 
-//#include "Image.h"
-//#include "CpuAllocator.h"
+// #include "Image.h"
+//#include "MallocAllocator.h"
 #include "GPUImage.h"
 
 typedef GPUImage<unsigned char> GPUImage_t;

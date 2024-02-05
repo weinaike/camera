@@ -67,7 +67,7 @@ void AsyncWriter::initBuffers(unsigned bufferSize)
 
     if(mBuffers.empty())
         mBuffers.resize(maxQueuSize);
-    CpuAllocator alloc;
+    MallocAllocator alloc;
     for(auto & buffer : mBuffers )
         buffer.reset((unsigned char*)alloc.allocate(bufferSize));
     mBufferSize = bufferSize;

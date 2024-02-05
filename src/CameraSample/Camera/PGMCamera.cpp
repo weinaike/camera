@@ -29,7 +29,7 @@
 #include "PGMCamera.h"
 #include "MainWindow.h"
 #include "RawProcessor.h"
-
+#include <QFileInfo>
 extern int loadPPM(const char *file, void** data, BaseAllocator *alloc, unsigned int &width, unsigned &wPitch, unsigned int &height, unsigned &bitsPerPixel, unsigned &channels);
 
 PGMCamera::PGMCamera(const QString &fileName,
@@ -44,15 +44,123 @@ PGMCamera::PGMCamera(const QString &fileName,
     mCameraThread.start();
 }
 
+
+
+
 PGMCamera::~PGMCamera()
 {
+    if(mfile)
+    {
+        fclose(mfile);
+        mfile = nullptr;
+    }
+    
     mCameraThread.quit();
     mCameraThread.wait(3000);
 }
 
 bool PGMCamera::open(uint32_t devID)
 {
-    Q_UNUSED(devID)
+    Q_UNUSED(devID);
+
+    QString fileExtension = QFileInfo(mFileName).suffix();
+    isRawFile = (fileExtension.toLower() == "raw");
+    printf("isRawFile %b\n", isRawFile);
+
+    if(isRawFile)
+    {
+        printf("if(isRawFile)\n");
+        if(mfile != NULL)
+        {
+            fclose(mfile);
+            mfile = NULL;
+        }
+        mfile = fopen(mFileName.toStdString().c_str(), "rb");
+        if (mfile == NULL) {
+            printf("Error opening file\n");
+            return false;
+        }
+
+        mState = cstClosed;
+
+        mManufacturer = QStringLiteral("Fastvideo");
+        mModel = QStringLiteral("raw video camera simulator");
+        mSerial = QStringLiteral("0000");
+        
+        MallocAllocator a;
+        
+        
+        uint width = 640;
+        uint height = 512;
+        uint pitch = width * 2;
+        uint sampleSize = 12;
+        uint samples = 1000;
+        uint frameSize  = pitch * height ;
+        unsigned char* bits = (unsigned char* )a.allocate(frameSize);
+
+        if(fread(bits, 1, frameSize, mfile) != frameSize)
+        {
+            printf("read frameSize from mfile failed\n");
+        }
+        cnt++;
+        mFPS = 100;
+
+        if(sampleSize == 8)
+        {
+            mImageFormat = cif8bpp;
+            mSurfaceFormat = FAST_I8;
+        }
+        else if(sampleSize == 12)
+        {
+            mImageFormat = cif12bpp;
+            mSurfaceFormat = FAST_I12;
+        }
+        else
+        {
+            mImageFormat = cif16bpp;
+            mSurfaceFormat = FAST_I16;
+        }
+
+        mWidth = width;
+        mHeight = height;
+        mWhite = (1 << sampleSize) - 1;
+        mBblack = 0;
+
+        mInputImage.w = width;
+        mInputImage.h = height;
+        mInputImage.surfaceFmt = mSurfaceFormat;
+        mInputImage.wPitch = pitch;
+        mInputImage.bitsPerChannel = sampleSize;
+        printf("PGMCamera::open w[%d] h[%d] stride[%d] bitsPerChannel[%d] mSurfaceFormat[%d]\n", width, height, pitch, sampleSize, mSurfaceFormat);
+
+        try
+        {
+            mInputImage.data.reset(static_cast<unsigned char*>(a.allocate(mInputImage.wPitch * mInputImage.h)));
+        }
+        catch(...)
+        {
+            printf("mInputImage.data.reset(static_cast<unsigned char*>(a.allocate(mInputImage.wPitch * mInputImage.h)))\n");
+            return false;
+        }
+
+        memcpy(mInputImage.data.get(), bits, pitch * height);
+        unsigned short* ptr = (unsigned short* )bits;
+        a.deallocate(bits);
+
+        if(!mInputBuffer.allocate(mWidth, mHeight, mSurfaceFormat))
+        {
+            printf("if(!mInputBuffer.allocate(mWidth, mHeight, mSurfaceFormat))\n");
+            return false;
+        }
+            
+
+        mState = cstStopped;
+        emit stateChanged(cstStopped);
+
+        return true;
+    }
+    
+
 
     mState = cstClosed;
 
@@ -60,7 +168,7 @@ bool PGMCamera::open(uint32_t devID)
     mModel = QStringLiteral("PGM camera simulator");
     mSerial = QStringLiteral("0000");
 
-    CpuAllocator a;
+    MallocAllocator a;
     unsigned char* bits = nullptr;
     uint width = 0;
     uint height = 0;
@@ -161,11 +269,26 @@ void PGMCamera::startStreaming()
 
     while(mState == cstStreaming)
     {
-        
+    #ifdef USE_CUDA
         cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
+    #else
+        if(isRawFile)
+        {
+            if (feof(mfile)) 
+            {
+                printf("PGMCamera::startStreaming mfile.eof()\n");
+            }
+            else
+            {
+                fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
+                cnt++;
+                printf("read frame idx %d\n",cnt);
+            }
+        }
+        memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);        
+    #endif
         mInputBuffer.release();
         QThread::msleep(1000 / mFPS);
-
         {
             QMutexLocker l(&mLock);
             mRawProc->wake();

@@ -56,6 +56,23 @@ RawProcessor::RawProcessor(GPUCameraBase *camera, GLRenderer *renderer):QObject(
     mCUDAThread.start();
 }
 
+
+RawProcessor::RawProcessor(GPUCameraBase *camera):QObject(nullptr),
+    mCamera(camera)
+{
+    if(camera->isColor())
+        mProcessorPtr.reset(new CUDAProcessorBase());
+    else
+        mProcessorPtr.reset(new CUDAProcessorGray());
+
+    connect(mProcessorPtr.data(), SIGNAL(error()), this, SIGNAL(error()));
+
+    mCUDAThread.setObjectName(QStringLiteral("CUDAThread"));
+    moveToThread(&mCUDAThread);
+    mCUDAThread.start();
+}
+
+
 RawProcessor::~RawProcessor()
 {
     stop();
@@ -155,6 +172,8 @@ void RawProcessor::startWorking()
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
         mProcessorPtr->Transform(img, mOptions);
+
+    #ifdef USE_CUDA
         if(mRenderer)
         {
             qint64 curTime = tm.elapsed();
@@ -173,6 +192,7 @@ void RawProcessor::startWorking()
                 emit finished();
             }
         }
+     #endif
         // 在将图片传输给GtGWidget进行实现
         {
             // to minimize delay in main thread

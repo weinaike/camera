@@ -43,8 +43,10 @@
 #include <QDesktopWidget>
 #endif
 
+#ifdef USE_CUDA
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
+#endif
 
 class GLImageViewer;
 

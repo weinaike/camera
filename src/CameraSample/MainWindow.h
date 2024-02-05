@@ -35,9 +35,11 @@
 #include "CUDAProcessorBase.h"
 //#include "FrameBuffer.h"
 #include "GPUCameraBase.h"
-#include "GLImageViewer.h"
 
+#ifdef CUDA_CUDA
+#include "GLImageViewer.h"
 class GLImageViewer;
+#endif
 class RawProcessor;
 
 namespace Ui {
@@ -148,9 +150,11 @@ private:
     QScopedPointer<RawProcessor> mProcessorPtr;
     QScopedPointer<GPUCameraBase> mCameraPtr;
 
+#ifdef CUDA_CUDA
     QScopedPointer<QWidget> mContainerPtr;
     QScopedPointer<GLImageViewer> mMediaViewer;
     QSharedPointer<GLRenderer> mRendererPtr;
+#endif
 
     CUDAProcessorOptions mOptions;
     QVector<unsigned short> mGammaCurve;

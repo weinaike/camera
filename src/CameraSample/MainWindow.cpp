@@ -91,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+#ifdef USE_CUDA
     int devCount = 0;
     cudaGetDeviceCount(&devCount);
 
@@ -100,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
         return;
     }
 
+
     mRendererPtr.reset(new GLRenderer());
 
     mMediaViewer.reset(new GLImageViewer(mRendererPtr.data()));
@@ -107,12 +108,13 @@ MainWindow::MainWindow(QWidget *parent) :
     mContainerPtr->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     // ui->MediaViewerLayout->insertWidget(0, mContainerPtr.data());
 
-    ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
-
-
     mContainerPtr->setMinimumSize(QSize(100, 100));
     mContainerPtr->setFocusPolicy(Qt::NoFocus);
     mRendererPtr->setRenderWnd(mMediaViewer.data());
+
+#endif
+
+    ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
 
     for(int i = 0; i < 16384; i++)
     {
@@ -128,7 +130,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         gammaSRGB[i] = static_cast<unsigned short>(y * 65535);
     }
-
+#ifdef USE_CUDA
     cudaDeviceProp devProps;
     for(int i = 0; i < devCount; i++)
     {
@@ -136,6 +138,10 @@ MainWindow::MainWindow(QWidget *parent) :
             continue;
         ui->cboCUDADevice->addItem(QString::fromLatin1(devProps.name), QVariant(i));
     }
+#endif
+
+
+
     {
         QSignalBlocker b(ui->cboBayerPattern);
         ui->cboBayerPattern->addItem("RGGB", FAST_BAYER_RGGB);
@@ -168,11 +174,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cboGamma->addItem("Linear", ogLinear);
     ui->cboGamma->addItem("sRGB", ogsRGB);
     ui->cboGamma->setCurrentIndex(0);
-
+#ifdef USE_CUDA
     mMediaViewer->setViewMode(ui->chkZoomFit->isChecked() ? GLImageViewer::vmZoomFit : GLImageViewer::vmPan);
     connect(mMediaViewer.data(), SIGNAL(zoomChanged(qreal)), this, SLOT(onZoomChanged(qreal)));
     connect(mMediaViewer.data(), SIGNAL(newWBFromPoint(QPoint)), this, SLOT(onNewWBFromPoint(QPoint)));
-
+#endif
     //Denoise
     connect(ui->denoiseCtlr, SIGNAL(stateChanged(bool)), this, SLOT(onDenoiseStateChanged(bool)));
     connect(ui->denoiseCtlr, SIGNAL(thresholdTypeChanged(int)), this, SLOT(onThresholdTypeChanged(int)));
@@ -259,7 +265,9 @@ void MainWindow::delayInit()
 {
     readSettings();
     onCameraStateChanged(GPUCameraBase::cstClosed);
+#ifdef USE_CUDA
     mRendererPtr->update();
+#endif
 }
 
 void MainWindow::customEvent(QEvent* event)
@@ -295,7 +303,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
     mCameraPtr.reset(cmr);
     if(!mCameraPtr)
         return;
-
+    
     if(!mCameraPtr->open(devID))
     {
         QMessageBox::critical(this, QCoreApplication::applicationName(),
@@ -309,8 +317,11 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
             this,
             SLOT(onCameraStateChanged(GPUCameraBase::cmrCameraState)));
 
+#ifdef USE_CUDA
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data(), mRendererPtr.data()));
-
+#else
+    mProcessorPtr.reset(new RawProcessor(mCameraPtr.data()));
+#endif
     connect(mProcessorPtr.data(), SIGNAL(finished()), this, SLOT(onGPUFinished()));
     connect(mProcessorPtr.data(), SIGNAL(error()), this, SLOT(onGPUError()));
 
@@ -342,9 +353,10 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
 
     mStatusLabel->setText(msg);
 
+#ifdef USE_CUDA
     mRendererPtr->setImageSize(QSize(mOptions.Width, mOptions.Height));
     on_chkZoomFit_toggled(ui->chkZoomFit->isChecked());
-
+#endif
     ui->actionPlay->setChecked(true);
 
     ui->cameraController->setCamera(mCameraPtr.data());
@@ -419,11 +431,11 @@ void MainWindow::openPGMFile(bool isBayer)
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     QStringLiteral("Select pgm file"),
                                                     mCurrentDir,
-                                                    QStringLiteral("Images (*.pgm)"));
+                                                    QStringLiteral("Images (*.pgm *.raw)"));
 
     if(fileName.isEmpty())
         return;
-
+    printf("fileName:%s\n", fileName.toStdString().c_str());
     mCurrentDir = Globals::getPathOfFile(fileName);
 
     if(mCameraPtr)
@@ -462,14 +474,18 @@ void MainWindow::on_chkZoomFit_toggled(bool checked)
 {
     if(checked)
     {
+    #ifdef USE_CUDA
         mMediaViewer->setViewMode(GLImageViewer::vmZoomFit);
+    #endif
         ui->btnResetZoom->setEnabled(false);
         ui->sldZoom->setEnabled(false);
         ui->chkZoomFit->setChecked(true);
     }
     else
     {
+    #ifdef USE_CUDA
         mMediaViewer->setViewMode(GLImageViewer::vmPan);
+    #endif
         ui->btnResetZoom->setEnabled(true);
         ui->sldZoom->setEnabled(true);
         ui->chkZoomFit->setChecked(false);
@@ -478,7 +494,9 @@ void MainWindow::on_chkZoomFit_toggled(bool checked)
 
 void MainWindow::on_sldZoom_valueChanged(int value)
 {
+#ifdef USE_CUDA
     mMediaViewer->setZoom((float)value / 100);
+#endif
     ui->lblZoom->setText(QString("%1%").arg(value));
 }
 
@@ -830,7 +848,7 @@ void MainWindow::on_actionWB_picker_toggled(bool arg1)
 
     if(!mCameraPtr->isColor())
         return;
-
+#ifdef USE_CUDA
     if(arg1)
     {
         mMediaViewer->setCurrentTool(GLImageViewer::tlWBPicker);
@@ -839,6 +857,7 @@ void MainWindow::on_actionWB_picker_toggled(bool arg1)
     {
         mMediaViewer->setCurrentTool(GLImageViewer::tlNone);
     }
+#endif
 }
 
 void MainWindow::onGPUError()
@@ -1169,7 +1188,11 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         updateOptions(mOptions);
         mProcessorPtr->updateOptions(mOptions);
         mProcessorPtr->init();
+
+#ifdef USE_CUDA
         mRendererPtr->showImage();
+#endif
+
         mCameraPtr->start();
         mProcessorPtr->start();
         ui->gtgWidget->start();
@@ -1260,10 +1283,11 @@ void MainWindow::on_actionClose_triggered()
 
     mCameraPtr.reset(nullptr);
     mProcessorPtr.reset(nullptr);
-
+#ifdef USE_CUDA
     if(mRendererPtr){
         mRendererPtr->setImageSize({});
         mRendererPtr->update();
     }
+#endif
 }
 

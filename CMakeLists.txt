@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 3.18)
 
-if(NOT WIN32)
-    set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
-endif()
+option(USE_CUDA ON)
 
-project(gpu-camera-sample VERSION 1.0 LANGUAGES CUDA CXX)
+if(USE_CUDA)
+    add_definitions(-DWITH_CUDA)
+    if(NOT WIN32)
+        set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
+    endif()
+
+    project(gpu-camera-sample VERSION 1.0 LANGUAGES CUDA CXX)
+else()
+    project(gpu-camera-sample VERSION 1.0 LANGUAGES CXX)
+endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -25,8 +32,14 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(CUDAToolkit REQUIRED)
-find_package(Qt5 COMPONENTS Gui Widgets OpenGL Network REQUIRED)
+if(USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    find_package(Qt5 COMPONENTS Gui Widgets OpenGL Network REQUIRED)
+else()
+    find_package(Qt5 COMPONENTS Gui Widgets Network REQUIRED)
+endif()
+
+
 
 set(ADDITIONAL_INCDIR)
 
@@ -92,7 +105,9 @@ if(WIN32)
         OtherLibs/ffmpeg/bin/avformat-57.dll
         OtherLibs/ffmpeg/bin/avutil-55.dll
         OtherLibs/ffmpeg/bin/swresample-2.dll
-        ${CUDAToolkit_LIBRARY_ROOT}/bin/cudart64_110.dll
+        if(USE_CUDA)
+            ${CUDAToolkit_LIBRARY_ROOT}/bin/cudart64_110.dll
+        endif()
     )
 endif()
 
@@ -109,11 +124,17 @@ if(WIN32)
         NAMES turbojpeg-static
         PATHS OtherLibs/jpeg-turbo/lib/
         REQUIRED)
-    set(ADDITIONAL_LIBS ${CUDAToolkit_LIBRARY_DIR}/cuda.lib opengl32)
+    if(USE_CUDA)
+        set(ADDITIONAL_LIBS ${CUDAToolkit_LIBRARY_DIR}/cuda.lib opengl32)
+    endif()
 else()
     set(JPEG_LIB jpeg)
     set(TURBOJPEG_LIB jpeg)
-    set(ADDITIONAL_LIBS cuda GL pthread)
+    if(USE_CUDA)
+        set(ADDITIONAL_LIBS cuda GL pthread)
+    else()
+        set(ADDITIONAL_LIBS pthread)
+    endif()
 endif()
 
 set(ADDITIONAL_LIBS
@@ -154,7 +175,7 @@ add_subdirectory(src/CameraSample)
 
 # create a list of files to copy
 set(THIRD_PARTY_DLLS ${THIRD_PARTY_DLLS}
-    ${FASTLIB_DIR}/fastvideo_sdk/bin/x64/fastvideo_sdk.dll
+    #${FASTLIB_DIR}/fastvideo_sdk/bin/x64/fastvideo_sdk.dll
 )
 
 install(FILES ${THIRD_PARTY_DLLS}

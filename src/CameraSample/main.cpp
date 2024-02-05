@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
     styleSheetList << QStringLiteral("QGroupBox::title {subcontrol-origin: margin; top: 0px; left: 15px;}");
     qApp->setStyleSheet(styleSheetList.join(QChar('\n')));
 
+#ifdef USE_CUDA
     int drvVer = 0;
     cudaError_t err = cudaSuccess;
     err = cudaDriverGetVersion(&drvVer);
@@ -139,6 +140,8 @@ int main(int argc, char *argv[])
                               QObject::tr("Kepler architecture or later GPU required.\nProcessing is impossible."));
         return 0;
     }
+
+#endif
 
     MainWindow w;
     w.show();

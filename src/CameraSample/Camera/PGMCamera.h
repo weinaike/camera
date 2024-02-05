@@ -32,7 +32,8 @@
 #include "GPUCameraBase.h"
 #include "FrameBuffer.h"
 #include "Image.h"
-#include "CpuAllocator.h"
+#include "MallocAllocator.h"
+#include <stdio.h>
 
 class PGMCamera : public GPUCameraBase
 {
@@ -47,11 +48,15 @@ public:
     virtual bool getParameter(cmrCameraParameter param, float& val);
     virtual bool setParameter(cmrCameraParameter param, float val);
     virtual bool getParameterInfo(cmrParameterInfo& info);
-
+    PGMCamera(const PGMCamera&) = delete;
+    PGMCamera& operator=(const PGMCamera&) = delete;
 private:
     void startStreaming();
     QString mFileName;
-    Image<CpuAllocator> mInputImage;
+    FILE *mfile;
+    int cnt = 0;
+    bool isRawFile = false;
+    Image<MallocAllocator> mInputImage;
 };
 
 #endif // PGMCAMERA_H

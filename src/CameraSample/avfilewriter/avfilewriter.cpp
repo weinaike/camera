@@ -6,7 +6,9 @@
 
 extern "C"{
 #include <libavutil/hwcontext.h>
+#ifdef USE_CUDA
 #include <libavutil/hwcontext_cuda.h>
+#endif
 };
 
 //////////////////////////////////////////////

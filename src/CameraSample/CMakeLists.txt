@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(CameraSample VERSION 1.0 LANGUAGES CUDA)
+if(USE_CUDA)
+    project(CameraSample VERSION 1.0 LANGUAGES CUDA)
+else()
+    project(CameraSample VERSION 1.0 LANGUAGES)
+endif()
 
 include_directories(${ADDITIONAL_INCDIR}
                     avfilewriter
@@ -10,6 +14,7 @@ include_directories(${ADDITIONAL_INCDIR}
                     Widgets
                     .
                 )
+
 
 set(SRC
     AppSettings.cpp
@@ -68,14 +73,18 @@ set(SRC
     Widgets/DenoiseController.cpp
     Widgets/DenoiseController.h
     Widgets/DenoiseController.ui
-    Widgets/GLImageViewer.cpp
-    Widgets/GLImageViewer.h
+
     Widgets/GtGWidget.cpp
     Widgets/GtGWidget.h
     fastvideo_common.h
-    CpuAllocator.h
-    CpuAllocator.cpp
 )
+if(USE_CUDA)
+    set(SRC ${SRC}
+        Widgets/GLImageViewer.cpp
+        Widgets/GLImageViewer.h
+    )
+endif()
+
 
 set(SRC ${SRC}
     ../../${FASTLIB_DIR}/common/alignment.cpp
@@ -119,23 +128,39 @@ endif()
 if(WIN32)
     add_executable(CameraSample WIN32 ${SRC})
 else()
-    add_executable(CameraSample ${SRC} CUDASupport/gray12torgb8.cu)
-
-    set_target_properties(CameraSample PROPERTIES
-    CXX_STANDARD 11
-    CUDA_STANDARD 11
-    )
+    if(USE_CUDA)
+        add_executable(CameraSample ${SRC} CUDASupport/gray12torgb8.cu)
+        set_target_properties(CameraSample PROPERTIES
+        CXX_STANDARD 11
+        CUDA_STANDARD 11
+        )
+    else()
+        add_executable(CameraSample ${SRC})
+        set_target_properties(CameraSample PROPERTIES
+        CXX_STANDARD 11
+        )
+    endif()
 
 endif()
 
-target_link_libraries(CameraSample PRIVATE
-    Qt5::Core Qt5::Widgets Qt5::Gui Qt5::OpenGL Qt5::Network
-    ${FastVideo_LIB}
-    ${FFMPEG_LIB}
-    ${JPEG_LIB}
-    CUDA::cudart
-    ${ADDITIONAL_LIBS}
-)
+if(USE_CUDA)   
+    target_link_libraries(CameraSample PRIVATE
+        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::OpenGL Qt5::Network
+        ${FastVideo_LIB}
+        ${FFMPEG_LIB}
+        ${JPEG_LIB}
+        CUDA::cudart
+        ${ADDITIONAL_LIBS}
+    )
+else()
+    target_link_libraries(CameraSample PRIVATE
+        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
+        ${FastVideo_LIB}
+        ${FFMPEG_LIB}
+        ${JPEG_LIB}
+        ${ADDITIONAL_LIBS}
+    )
+endif()
 
 if(WIN32)
     get_filename_component(QTBINPATH ${QT_QMAKE_EXECUTABLE} DIRECTORY)

@@ -34,12 +34,21 @@
 #include <memory>
 #include <cstring>
 #include "alignment.hpp"
-#include "CudaAllocator.h"
+#ifdef USE_CUDA
+    #include "CudaAllocator.h"
+#else
+    #include "MallocAllocator.h"
+#endif
 
 template<class T>
 class GPUImage {
 public:
-    std::unique_ptr<T, CudaAllocator> data;
+    #ifdef USE_CUDA
+        std::unique_ptr<T, CudaAllocator> data;
+    #else
+        std::unique_ptr<T, MallocAllocator> data;
+    #endif
+    
     unsigned w = 0;
     unsigned h = 0;
     unsigned wPitch = 0;
@@ -63,14 +72,27 @@ public:
 
         try
         {
-            data.reset((T*)CudaAllocator::allocate(fullSize));
+            
+            #ifdef USE_CUDA
+                data.reset((T*)CudaAllocator::allocate(fullSize));
+            #else
+                MallocAllocator a;
+                data.reset((T*)a.allocate(fullSize));
+            #endif
+
+
         }
         catch (std::bad_alloc& ba)
         {
             fprintf(stderr, "Memory allocation failed: %s\n", ba.what());
             return;
         }
-        cudaMemcpy(data.get(), img.data.get(), fullSize * sizeof(T), cudaMemcpyDeviceToDevice);
+        #ifdef USE_CUDA
+            cudaMemcpy(data.get(), img.data.get(), fullSize * sizeof(T), cudaMemcpyDeviceToDevice);
+        #else
+            memcpy(data.get(), img.data.get(), fullSize * sizeof(T));
+        #endif
+        
     };
 
     unsigned GetBytesPerPixel() const {
