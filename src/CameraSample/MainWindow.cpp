@@ -113,8 +113,17 @@ MainWindow::MainWindow(QWidget *parent) :
     mRendererPtr->setRenderWnd(mMediaViewer.data());
 
 #endif
-
+    // ui->gtgWidget->setFixedSize(640,512);
+    // ui->gtgWidget->setStyleSheet("background-color: black");
+    // // 前景设置未白色
+    // ui->gtgWidget->setStyleSheet("color: white");
     ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
+
+    QLabel* mResultLabel = new QLabel("Hello, world!");
+    mResultLabel->setFixedSize(640,320);
+    mResultLabel->setStyleSheet("background-color: black");
+    ui->MediaViewerLayout->insertWidget(1, mResultLabel);
+    
 
     for(int i = 0; i < 16384; i++)
     {
@@ -254,7 +263,28 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
     QTimer::singleShot(0, this, [this](){delayInit();});
-}
+    
+    // 去掉不需要的模块
+    // removeDockWidget(ui->dockWidget);
+    // ui->dockWidget->hide();
+    // removeDockWidget(ui->processWidget);
+    // ui->processWidget->hide();
+    // removeDockWidget(ui->colorCorrectionWidget);
+    // ui->colorCorrectionWidget->hide();
+    // removeDockWidget(ui->exposureWidget);
+    // ui->exposureWidget->hide();
+    // removeDockWidget(ui->denoiseWidget);
+    // ui->denoiseWidget->hide();
+    // removeDockWidget(ui->benchMarksWidget);
+    // ui->benchMarksWidget->hide();
+    // removeDockWidget(ui->recordingWidget);
+    // ui->recordingWidget->hide();
+    removeDockWidget(ui->gtgDockWidget);
+    ui->gtgDockWidget->hide();
+    delete ui->gtgDockWidget;
+    // removeDockWidget(ui->cameraStatWidget);
+    // ui->cameraStatWidget->hide();
+}   
 
 MainWindow::~MainWindow()
 {
@@ -933,6 +963,7 @@ void MainWindow::onGPUFinished()
     QString strInfo;
     if(!mProcessorPtr)
         return;
+
     if(!ui->lblInfo->isVisible())
         return;
     fastStatus_t ret = mProcessorPtr->getLastError();
@@ -1242,21 +1273,6 @@ void setBitrate(QComboBox* cb, int bitrate)
 	}else{
 		cb->setCurrentText(QString::number(bitrate));
 	}
-}
-
-void MainWindow::on_btnStartRtspServer_clicked()
-{
-    return;
-}
-
-void MainWindow::on_btnStopRtspServer_clicked()
-{
-    return;
-}
-
-void MainWindow::on_cboFormatEnc_currentIndexChanged(int index)
-{
-	return;
 }
 
 void MainWindow::on_actionShowImage_triggered(bool checked)

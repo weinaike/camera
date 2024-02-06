@@ -32,6 +32,7 @@
 #include <QLabel>
 #include <QWidget>
 #include <QPixmap>
+#include <QDebug>
 // glass to glass test
 class GtGWidget : public QWidget
 {
@@ -43,8 +44,21 @@ public:
 
     void setImage(unsigned char * ptr, int w, int h, int step) 
     {
-        QImage img(ptr, w, h, step, QImage::Format_RGB888);
-        *m_pixmap = QPixmap::fromImage(img);
+        if(w == step)
+        {
+            QImage img(ptr, w, h, step, QImage::Format_Grayscale8);
+            *m_pixmap = QPixmap::fromImage(img);
+        }
+        else if(step == 3 * w)
+        {            
+            QImage img(ptr, w, h, step, QImage::Format_RGB888);
+            *m_pixmap = QPixmap::fromImage(img);
+        }
+        else
+        {
+            // 输出错误信息
+            qDebug() << "GtGWidget::setImage: unsupported format";            
+        }
         update();
     }
 

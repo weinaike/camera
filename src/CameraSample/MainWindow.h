@@ -131,11 +131,6 @@ private slots:
     void on_btnGetGrayFile_clicked();
     void on_chkSAM_toggled(bool checked);
 
-    //RTSP
-    void on_btnStartRtspServer_clicked();
-    void on_btnStopRtspServer_clicked();
-
-	void on_cboFormatEnc_currentIndexChanged(int index);
     void on_actionShowImage_triggered(bool checked);
 
 
@@ -160,7 +155,7 @@ private:
     QVector<unsigned short> mGammaCurve;
 
     QString mCurrentDir;
-
+    QLabel* mResultLabel = nullptr;
     void delayInit();
     void raw2Rgb(bool update = true, bool init = false);
     void updateAll();

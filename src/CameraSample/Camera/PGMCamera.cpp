@@ -31,7 +31,7 @@
 #include "RawProcessor.h"
 #include <QFileInfo>
 extern int loadPPM(const char *file, void** data, BaseAllocator *alloc, unsigned int &width, unsigned &wPitch, unsigned int &height, unsigned &bitsPerPixel, unsigned &channels);
-
+using CameraStatEnum = GPUCameraBase::cmrCameraStatistic  ;
 PGMCamera::PGMCamera(const QString &fileName,
                      fastBayerPattern_t  pattern,
                      bool isColor) :
@@ -69,13 +69,11 @@ bool PGMCamera::open(uint32_t devID)
 
     if(isRawFile)
     {
-        printf("if(isRawFile)\n");
-        if(mfile != NULL)
+        printf("if(isRawFile), %p\n", mfile);
+        if(mfile == NULL)
         {
-            fclose(mfile);
-            mfile = NULL;
+            mfile = fopen(mFileName.toStdString().c_str(), "rb");
         }
-        mfile = fopen(mFileName.toStdString().c_str(), "rb");
         if (mfile == NULL) {
             printf("Error opening file\n");
             return false;
@@ -274,16 +272,26 @@ void PGMCamera::startStreaming()
     #else
         if(isRawFile)
         {
-            if (feof(mfile)) 
-            {
-                printf("PGMCamera::startStreaming mfile.eof()\n");
-            }
-            else
+            if (!feof(mfile)) 
             {
                 fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
                 cnt++;
-                printf("read frame idx %d\n",cnt);
+                
+                mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
+                mStatistics[CameraStatEnum::statCurrFrameID] = cnt;
+                // printf("read frame idx %d\n",cnt);
+                // enum class cmrCameraStatistic {
+                //     statFramesTotal = 0, /// Total number of frames acquired
+                //     statFramesDropped ,  /// Number of dropped frames
+                //     statFramesIncomplete , /// Number of incomplete frames
+                //     statCurrFrameID,    /// Current Frame ID (blockID)
+                //     statCurrTimestamp,  /// Current Frame Timestamp
+                //     statCurrTroughputMbs100, /// Average Thoughtput in Megabits per 100 seconds
+                //     statCurrFps100 /// FPS multiplied by 100
+                // } ;
+
             }
+            mStatistics[CameraStatEnum::statFramesTotal]++;
         }
         memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);        
     #endif

@@ -58,7 +58,7 @@
 #include "timing.hpp"
 #include "helper_image/helper_ppm.hpp"
 #include "Image.h"
-#include "helper_jpeg.hpp"
+// #include "helper_jpeg.hpp"
 #include "FrameBuffer.h"
 
 #include "Globals.h"
@@ -94,8 +94,7 @@ public:
     void clearExifSections();
 
     virtual void* GetFrameBuffer();
-    
-    void* getSrcCpuPtr();
+
     virtual bool isGrayscale(){return false;}
     QString getLastErrorDescription(){ return mErrString; }
     fastStatus_t getLastError(){ return mLastError; }

@@ -77,13 +77,18 @@ void CUDAProcessorBase::freeFilters()
     mLastError = FAST_OK;
 
     clearExifSections();
-#ifdef USE_CUDA
+
     if(hGLBuffer)
     {
+#ifdef USE_CUDA
         cudaFree( hGLBuffer );
         hGLBuffer  = nullptr;
+#else
+        free(hGLBuffer);
+        hGLBuffer = nullptr;
+#endif   
     }
-#endif    
+ 
 
     if(srcBuffer)
     {
@@ -205,6 +210,9 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 
     fastSurfaceFormat_t srcSurfaceFmt  = options.SurfaceFmt;
 
+    unsigned int width = options.Width;
+    unsigned int height = options.Height;
+
     unsigned int maxWidth = options.MaxWidth;
     unsigned int maxHeight = options.MaxHeight;
     
@@ -213,9 +221,6 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 
     // 根据maxWidth， maxHeight， 以及srcSurfaceFmt格式， 申请cuda内存    
     fmtCudaMalloc(&srcBuffer, maxWidth, maxHeight, srcSurfaceFmt);
-    mSrcCpuPtr = malloc(maxWidth * maxHeight * 3 * sizeof(unsigned char));
-    
-
 
     // malloc srcBuffer
     //bufferPtr = &srcBuffer;
@@ -240,7 +245,20 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 
     stats[QStringLiteral("totalMem")] = totalMem;
     stats[QStringLiteral("freeMem")] = freeMem;
+#else
+    if (srcSurfaceFmt > 4)
+    {
+        hGLBuffer = malloc(width * height * 3 * sizeof(unsigned char));
+    }
+    else
+    {
+        hGLBuffer = malloc(width * height * sizeof(unsigned char));
+    }
+
+    
 #endif
+
+
     emit initialized(QString());
     mInitialised = true;
 
@@ -332,6 +350,11 @@ int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* Buffer, int  imgW
     {
         // Transformation logic for converting from CUDA FAST_RGB8 to OpenGL RGB8
         // copy direct
+    #ifdef USE_CUDA
+        cudaMemcpy(srcptr, Buffer, imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+    #else
+        memcpy(Buffer, srcptr, imgWidth * imgHeight * 3);
+    #endif
     }
     else if (FAST_I8 == SurfaceFmt)
     {
@@ -555,15 +578,6 @@ void* CUDAProcessorBase::GetFrameBuffer()
         return nullptr;
     else
         return hGLBuffer;//纯数据，格式要求RGB24位连续存储。
-}
-
-
-void* CUDAProcessorBase::getSrcCpuPtr()
-{
-    if(!mInitialised)
-        return nullptr;
-    else
-        return mSrcCpuPtr;//纯数据，格式要求RGB24位连续存储。
 }
 
 void CUDAProcessorBase::clearExifSections()

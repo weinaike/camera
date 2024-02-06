@@ -32,7 +32,6 @@
 #include <QString>
 #include <QMutex>
 #include "fastvideo_sdk_define.h"
-// #include "fastvideo_common.h"
 
 struct AVFormatContext;
 struct AVFrame;

@@ -53,7 +53,7 @@ public:
 private:
     void startStreaming();
     QString mFileName;
-    FILE *mfile;
+    FILE *mfile = nullptr;
     int cnt = 0;
     bool isRawFile = false;
     Image<MallocAllocator> mInputImage;

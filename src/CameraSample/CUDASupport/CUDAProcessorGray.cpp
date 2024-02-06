@@ -181,6 +181,18 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     stats[QStringLiteral("freeMem")] = freeMem;
     stats[QStringLiteral("allocatedMem")] = requestedMemSpace;
     stats[QStringLiteral("elapsedTime")] = mcs;
+#else
+    unsigned int width = options.Width;
+    unsigned int height = options.Height;
+    if (srcSurfaceFmt > 4)
+    {
+        hGLBuffer = malloc(width * height * 3 * sizeof(unsigned char));
+    }
+    else
+    {
+        hGLBuffer = malloc(width * height * sizeof(unsigned char));
+    }
+
 
 #endif
 
@@ -250,7 +262,7 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
         cudaDeviceSynchronize();
     }
 #else
-    transformToGLBuffer(image->data.get(), mSrcCpuPtr, imgWidth, imgHeight, opts.SurfaceFmt);
+    transformToGLBuffer(image->data.get(), hGLBuffer, imgWidth, imgHeight, opts.SurfaceFmt);
 #endif
 
 

@@ -36,18 +36,17 @@
 #include "alignment.hpp"
 #ifdef USE_CUDA
     #include "CudaAllocator.h"
+    typedef CudaAllocator Allocator;
+
 #else
     #include "MallocAllocator.h"
+    typedef MallocAllocator Allocator;
 #endif
 
 template<class T>
 class GPUImage {
 public:
-    #ifdef USE_CUDA
-        std::unique_ptr<T, CudaAllocator> data;
-    #else
-        std::unique_ptr<T, MallocAllocator> data;
-    #endif
+    std::unique_ptr<T, Allocator> data;
     
     unsigned w = 0;
     unsigned h = 0;
@@ -72,15 +71,8 @@ public:
 
         try
         {
-            
-            #ifdef USE_CUDA
-                data.reset((T*)CudaAllocator::allocate(fullSize));
-            #else
-                MallocAllocator a;
-                data.reset((T*)a.allocate(fullSize));
-            #endif
-
-
+            Allocator a;
+            data.reset((T*)a.allocate(fullSize));
         }
         catch (std::bad_alloc& ba)
         {

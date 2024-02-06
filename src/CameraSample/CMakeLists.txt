@@ -20,8 +20,6 @@ set(SRC
     AppSettings.cpp
     AsyncFileWriter.cpp
     Globals.cpp
-    helper_jpeg_load.cpp
-    helper_jpeg_store.cpp
     main.cpp
     MainWindow.cpp
     MJPEGEncoder.cpp
@@ -38,7 +36,6 @@ set(SRC
     RawProcessor.h
     resource.h
     version.h
-    helper_jpeg.hpp
     Resorces.qrc
     #gpu-camera-sample.rc
     resource.rc
@@ -73,10 +70,8 @@ set(SRC
     Widgets/DenoiseController.cpp
     Widgets/DenoiseController.h
     Widgets/DenoiseController.ui
-
     Widgets/GtGWidget.cpp
     Widgets/GtGWidget.h
-    fastvideo_common.h
 )
 if(USE_CUDA)
     set(SRC ${SRC}

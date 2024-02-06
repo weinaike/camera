@@ -145,6 +145,7 @@ void RawProcessor::startWorking()
     int bpc = GetBitsPerChannelFromSurface(mCamera->surfaceFormat());
     int maxVal = (1 << bpc) - 1;
     QString pgmHeader = QString("P5\n%1 %2\n%3\n").arg(mOptions.Width).arg(mOptions.Height).arg(maxVal);
+    qDebug() << "pgmHeader: " << pgmHeader;
 
     mWake = false;
 
@@ -192,13 +193,23 @@ void RawProcessor::startWorking()
                 emit finished();
             }
         }
-     #endif
-        // 在将图片传输给GtGWidget进行实现
+    #else
+            // 在将图片传输给GtGWidget进行实现
         {
             // to minimize delay in main thread
-            unsigned char * mSrcCpuPtr = (unsigned char * ) mProcessorPtr->getSrcCpuPtr();
-            emit show_image(mSrcCpuPtr,  mOptions.Width,  mOptions.Height, mOptions.Width * 3);
+            unsigned char * GLBuffer = (unsigned char * ) mProcessorPtr->GetFrameBuffer();
+            if (mOptions.SurfaceFmt > 4)
+            {
+                emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width * 3);
+            }
+            else
+            {
+                emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width);
+            }
+            emit finished();            
         }
+    #endif
+
         if(mWriting && mFileWriterPtr)
         {
             if(mOptions.Codec == CUDAProcessorOptions::vcJPG ||
