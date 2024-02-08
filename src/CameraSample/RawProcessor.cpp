@@ -172,6 +172,8 @@ void RawProcessor::startWorking()
         }
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
+
+        // 显示
         mProcessorPtr->Transform(img, mOptions);
 
     #ifdef USE_CUDA

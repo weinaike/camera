@@ -125,6 +125,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->MediaViewerLayout->insertWidget(1, mResultLabel);
     
 
+    QSlider *mSlider = new QSlider(Qt::Horizontal);
+    mSlider->setRange(0, 100); // 设置进度条的范围为0到100
+    mSlider->setValue(0); // 设置进度条的初始值为0
+
+    ui->MediaViewerLayout->insertWidget(2, mSlider);
+
     for(int i = 0; i < 16384; i++)
     {
         gammaLin[i] = static_cast<unsigned short>(i * 4);
@@ -210,6 +216,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     qRegisterMetaType<GPUCameraBase::cmrCameraState>("cmrCameraState");
 
+
+    // View
     QMenu* menuPtr = createPopupMenu();
     if(menuPtr != nullptr)
     {
@@ -275,6 +283,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // ui->exposureWidget->hide();
     // removeDockWidget(ui->denoiseWidget);
     // ui->denoiseWidget->hide();
+    // delete ui->denoiseWidget;
     // removeDockWidget(ui->benchMarksWidget);
     // ui->benchMarksWidget->hide();
     // removeDockWidget(ui->recordingWidget);
@@ -346,6 +355,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
             SIGNAL(stateChanged(GPUCameraBase::cmrCameraState)),
             this,
             SLOT(onCameraStateChanged(GPUCameraBase::cmrCameraState)));
+
 
 #ifdef USE_CUDA
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data(), mRendererPtr.data()));
@@ -476,7 +486,8 @@ void MainWindow::openPGMFile(bool isBayer)
                       (fastBayerPattern_t)ui->cboBayerPattern->currentData().toInt(),
                       isBayer),
                   0);
-
+    // 变更视频文件指针的位置
+    // QObject::connect(mSlider, &QSlider::valueChanged, mCameraPtr.data() , &PGMCamera::setValue);
 }
 
 void MainWindow::raw2Rgb(bool update, bool init)

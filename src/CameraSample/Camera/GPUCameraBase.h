@@ -69,7 +69,7 @@ public:
         cstStopped,
         cstStreaming
     } cmrCameraState;
-
+    
     typedef enum{
         prmFrameRate = 0,
         prmExposureTime,
@@ -85,6 +85,9 @@ public:
         statCurrTroughputMbs100, /// Average Thoughtput in Megabits per 100 seconds
         statCurrFps100 /// FPS multiplied by 100
     } ;
+    
+    
+
 
     struct cmrParameterInfo{
         cmrCameraParameter param;

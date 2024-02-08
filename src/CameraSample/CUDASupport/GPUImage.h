@@ -43,17 +43,29 @@
     typedef MallocAllocator Allocator;
 #endif
 
+enum MemoryType
+{
+    mtNone = 0,
+    mtHost,
+    mtDevice
+};
+
 template<class T>
 class GPUImage {
 public:
     std::unique_ptr<T, Allocator> data;
-    
     unsigned w = 0;
     unsigned h = 0;
     unsigned wPitch = 0;
     unsigned bitsPerChannel = 8;
-
     fastSurfaceFormat_t surfaceFmt = FAST_RGB8;
+    // 新增的变量，用于保存图像的时间戳
+    unsigned fps = 25;
+    uint64_t timestamp = 0;
+    uint64_t frameID = 0;
+    int memType = mtHost;
+    // -----------------------
+    
 
     explicit GPUImage(void) {
         w = h = wPitch = 0;
@@ -66,6 +78,14 @@ public:
         wPitch = img.wPitch;
         bitsPerChannel = img.bitsPerChannel;
         surfaceFmt = img.surfaceFmt;
+
+        // 新增的变量，用于保存图像的时间戳
+        fps = img.fps;
+        timestamp = img.timestamp;
+        frameID = img.frameID;
+        memType = img.memType;
+        //--------------------------------
+
 
         unsigned fullSize = wPitch * h;
 

@@ -39,6 +39,7 @@
 #include "GPUImage.h"
 
 typedef GPUImage<unsigned char> GPUImage_t;
+// 这是一个先进先出的队列，适合用于图像显示
 
 class CircularBuffer : public QObject
 {

@@ -50,12 +50,17 @@ public:
     virtual bool getParameterInfo(cmrParameterInfo& info);
     PGMCamera(const PGMCamera&) = delete;
     PGMCamera& operator=(const PGMCamera&) = delete;
+    // 槽函数
+    void setValue(int value);
+
 private:
     void startStreaming();
     QString mFileName;
     FILE *mfile = nullptr;
     int cnt = 0;
+    int mSamples = 0;
     bool isRawFile = false;
+    int mFrameSize = 0;
     Image<MallocAllocator> mInputImage;
 };
 

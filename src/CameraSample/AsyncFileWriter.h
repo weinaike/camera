@@ -46,6 +46,7 @@ struct FileWriterTask
     unsigned int size{};
     QString fileName;
 };
+// 构建FIFO队列，用于保存图像数据，最大长度为32，超过部分将被丢弃
 
 class AsyncWriter : public QObject
 {

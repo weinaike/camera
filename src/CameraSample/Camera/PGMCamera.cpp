@@ -42,6 +42,7 @@ PGMCamera::PGMCamera(const QString &fileName,
     mCameraThread.setObjectName(QStringLiteral("PGMCameraThread"));
     moveToThread(&mCameraThread);
     mCameraThread.start();
+    qRegisterMetaType<GPUCameraBase::cmrCameraState>("GPUCameraBase::cmrCameraState");
 }
 
 
@@ -94,7 +95,14 @@ bool PGMCamera::open(uint32_t devID)
         uint sampleSize = 12;
         uint samples = 1000;
         uint frameSize  = pitch * height ;
+        mFrameSize = frameSize;
         unsigned char* bits = (unsigned char* )a.allocate(frameSize);
+
+
+        fseek(mfile, 0, SEEK_END);
+        long fileSize = ftell(mfile);
+        fseek(mfile, 0, SEEK_SET);
+        mSamples = fileSize / frameSize;
 
         if(fread(bits, 1, frameSize, mfile) != frameSize)
         {
@@ -265,11 +273,10 @@ void PGMCamera::startStreaming()
     if(!mInputImage.data)
         return;
 
-    while(mState == cstStreaming)
+    bool finish = false;
+
+    while(mState == cstStreaming && (finish == false))
     {
-    #ifdef USE_CUDA
-        cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
-    #else
         if(isRawFile)
         {
             if (!feof(mfile)) 
@@ -292,17 +299,30 @@ void PGMCamera::startStreaming()
 
             }
             mStatistics[CameraStatEnum::statFramesTotal]++;
+            
         }
+    #ifdef USE_CUDA
+        cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
+    #else        
         memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);        
     #endif
         mInputBuffer.release();
         QThread::msleep(1000 / mFPS);
         {
             QMutexLocker l(&mLock);
+
+            if(cnt >= mSamples - 1)
+            {
+                cnt = 0;
+                fseek(mfile, 0, SEEK_SET);     
+                finish = true;
+            }
+
             mRawProc->wake();
         }
     }
 
+    stop();
 }
 bool PGMCamera::getParameter(cmrCameraParameter param, float& val)
 {
@@ -337,4 +357,11 @@ bool PGMCamera::getParameterInfo(cmrParameterInfo& info)
 {
     Q_UNUSED(info)
     return false;
+}
+
+void PGMCamera::setValue(int value)
+{
+    QMutexLocker l(&mLock);
+    cnt = value * (mSamples - 1) / 100;
+    fseek(mfile, cnt * mFrameSize, SEEK_SET);     
 }

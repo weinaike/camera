@@ -263,6 +263,7 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
     }
 #else
     transformToGLBuffer(image->data.get(), hGLBuffer, imgWidth, imgHeight, opts.SurfaceFmt);
+    memcpy(mSrcCpuPtr, hGLBuffer, imgWidth * imgHeight * sizeof(unsigned char) );
 #endif
 
 

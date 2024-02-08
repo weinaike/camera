@@ -561,7 +561,7 @@ fastStatus_t CUDAProcessorBase::exportJPEGData(void* dstPtr, unsigned jpegQualit
 
     std::vector <unsigned char > output;
 
-    enc.encode((unsigned char*)mSrcCpuPtr, mWidth, mHeight, 3, output, jpegQuality);
+    enc.encode((unsigned char*)mSrcCpuPtr, mWidth, mHeight, 1, output, jpegQuality);
 
     size = output.size();
     memcpy(dstPtr, output.data(), size);

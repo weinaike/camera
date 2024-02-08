@@ -35,6 +35,7 @@
 #include "CUDAProcessorBase.h"
 //#include "FrameBuffer.h"
 #include "GPUCameraBase.h"
+#include <QSlider>
 
 #ifdef CUDA_CUDA
 #include "GLImageViewer.h"
@@ -156,6 +157,7 @@ private:
 
     QString mCurrentDir;
     QLabel* mResultLabel = nullptr;
+    QSlider *mSlider = nullptr;;
     void delayInit();
     void raw2Rgb(bool update = true, bool init = false);
     void updateAll();
