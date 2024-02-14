@@ -141,13 +141,19 @@ endif()
 if(USE_CUDA)   
     target_link_libraries(CameraSample PRIVATE
         Qt5::Core Qt5::Widgets Qt5::Gui Qt5::OpenGL Qt5::Network
-        ${FastVideo_LIB}
         ${FFMPEG_LIB}
         ${JPEG_LIB}
         CUDA::cudart
         ${ADDITIONAL_LIBS}
     )
 else()
+#    target_link_libraries(CameraSample PRIVATE
+#        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
+#        ${FFMPEG_LIB}
+#        ${JPEG_LIB}
+#        ${ADDITIONAL_LIBS}
+#    )
+
     target_link_libraries(CameraSample PRIVATE
         Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
         ${FastVideo_LIB}
@@ -155,10 +161,13 @@ else()
         ${JPEG_LIB}
         ${ADDITIONAL_LIBS}
     )
+
 endif()
 
 if(WIN32)
+    set(QT_QMAKE_EXECUTABLE "C:/Qt/Qt5.8.0/5.8/msvc2015_64/bin/qmake.exe" CACHE FILEPATH "Qt qmake executable" FORCE)
     get_filename_component(QTBINPATH ${QT_QMAKE_EXECUTABLE} DIRECTORY)
+
     add_custom_command(
         TARGET CameraSample POST_BUILD
         COMMAND ${QTBINPATH}/windeployqt ${CMAKE_BINARY_DIR}/bin/CameraSample.exe

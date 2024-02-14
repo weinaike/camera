@@ -11,11 +11,11 @@ TEMPLATE = app
 unix:  FASTVIDEO_EXTRA_DLLS += $$PWD/GPUCameraSample.sh
 
 CONFIG += console
+CONFIG += c++11
 
 #INCLUDEPATH += ./CUDASupport
 #INCLUDEPATH += ./Camera
 #INCLUDEPATH += ./Widgets
-INCLUDEPATH += $$OTHER_LIB_PATH/FastvideoSDK/core_samples
 INCLUDEPATH += $$PWD
 INCLUDEPATH += $$PWD/CUDASupport
 INCLUDEPATH += $$PWD/Widgets
@@ -27,44 +27,38 @@ SOURCES += main.cpp\
     MainWindow.cpp \
     Globals.cpp \
     AppSettings.cpp \
-    FFCReader.cpp \
-    FPNReader.cpp \
+    #FFCReader.cpp \
+    #FPNReader.cpp \
     ppm.cpp \
-    helper_jpeg_load.cpp \
-    helper_jpeg_store.cpp \
+    #helper_jpeg_load.cpp \
+    #helper_jpeg_store.cpp \
     RawProcessor.cpp \
     AsyncFileWriter.cpp \
     MJPEGEncoder.cpp \
     avfilewriter/avfilewriter.cpp \
-    $$OTHER_LIB_PATH/FastvideoSDK/common/SurfaceTraits.cpp \
-    $$OTHER_LIB_PATH/FastvideoSDK/common/alignment.cpp \
     Camera/GPUCameraBase.cpp \
     Camera/FrameBuffer.cpp \
     Camera/PGMCamera.cpp \
     CUDASupport/CUDAProcessorBase.cpp \
     CUDASupport/CUDAProcessorGray.cpp \
     Widgets/DenoiseController.cpp \
-    Widgets/GLImageViewer.cpp \
     Widgets/GtGWidget.cpp \
     Widgets/CameraSetupWidget.cpp \
     Widgets/camerastatistics.cpp \
-    RtspServer/CTPTransport.cpp \
+    #RtspServer/CTPTransport.cpp \
     RtspServer/JpegEncoder.cpp \
-    RtspServer/RTSPStreamerServer.cpp \
-    RtspServer/TcpClient.cpp \
-    RtspServer/vutils.cpp
-
-
-win32: SOURCES += $$OTHER_LIB_PATH/FastvideoSDK/core_samples/SurfaceTraitsInternal.cpp
+    #RtspServer/RTSPStreamerServer.cpp \
+    #RtspServer/TcpClient.cpp \
+    #RtspServer/vutils.cpp
 
 HEADERS  += MainWindow.h \
     Camera/BaslerCamera.h \
     Globals.h \
     AppSettings.h \
-    FFCReader.h \
-    FPNReader.h \
+    #FFCReader.h \
+    #FPNReader.h \
     ppm.h \
-    helper_jpeg.hpp \
+    #helper_jpeg.hpp \
     RawProcessor.h \
     AsyncFileWriter.h \
     AsyncQueue.h \
@@ -79,17 +73,47 @@ HEADERS  += MainWindow.h \
     CUDASupport/CudaAllocator.h \
     CUDASupport/GPUImage.h \
     Widgets/DenoiseController.h \
-    Widgets/GLImageViewer.h \
     Widgets/camerastatistics.h \
     Widgets/GtGWidget.h \
     Widgets/CameraSetupWidget.h \
     RtspServer/common_utils.h \
-    RtspServer/CTPTransport.h \
+    #RtspServer/CTPTransport.h \
     RtspServer/JpegEncoder.h \
-    RtspServer/RTSPStreamerServer.h \
-    RtspServer/TcpClient.h \
-    RtspServer/vutils.h \
+    #RtspServer/RTSPStreamerServer.h \
+    #RtspServer/TcpClient.h \
+    #RtspServer/vutils.h \
+#    $$OTHER_LIB_PATH/FastvideoSDK/common/SurfaceTraits.hpp \
     version.h
+
+win32{
+    SOURCES +=  $$PWD/../../OtherLibs/FastvideoSDK/common/BaseAllocator.cpp \
+                $$PWD/../../OtherLibs/FastvideoSDK/common/SurfaceTraits.cpp \
+                $$PWD/../../OtherLibs/FastvideoSDK/common/alignment.cpp \
+                $$PWD/../../OtherLibs/FastvideoSDK/core_samples/SurfaceTraitsInternal.cpp
+#               $$FASTVIDEO_SDK/common/FastAllocator.cpp
+
+    HEADERS +=  $$PWD/../../OtherLibs/FastvideoSDK/common/BaseAllocator.h \
+                $$PWD/../../OtherLibs/FastvideoSDK/common/SurfaceTraits.hpp \
+                $$PWD/../../OtherLibs/FastvideoSDK/common/alignment.hpp \
+                $$PWD/../../OtherLibs/FastvideoSDK/core_samples/SurfaceTraitsInternal.hpp
+#               $$FASTVIDEO_SDK/common/FastAllocator.h
+
+}else{
+    SOURCES += $$PWD/../../OtherLibsLinux/FastvideoSDK/common/BaseAllocator.cpp \
+               $$PWD/../../OtherLibsLinux/FastvideoSDK/common/FastAllocator.cpp
+
+    HEADERS += $$PWD/../../OtherLibsLinux/FastvideoSDK/common/BaseAllocator.h \
+               $$PWD/../../OtherLibsLinux/FastvideoSDK/common/FastAllocator.h
+}
+
+
+
+
+contains(DEFINES, USE_CUDA ){
+   SOURCES += Widgets/GLImageViewer.cpp
+   HEADERS += Widgets/GLImageViewer.h
+}
+
 
 contains(DEFINES, SUPPORT_XIMEA ){
    SOURCES += Camera/XimeaCamera.cpp
@@ -158,19 +182,6 @@ FORMS    += MainWindow.ui \
     Widgets/CameraSetupWidget.ui \
     Widgets/camerastatistics.ui
 
-win32{
-    SOURCES += $$PWD/../../OtherLibs/fastvideoSDK/common/BaseAllocator.cpp \
-               $$PWD/../../OtherLibs/fastvideoSDK/common/FastAllocator.cpp
-
-    HEADERS += $$PWD/../../OtherLibs/fastvideoSDK/common/BaseAllocator.h \
-               $$PWD/../../OtherLibs/fastvideoSDK/common/FastAllocator.h
-}else{
-    SOURCES += $$PWD/../../OtherLibsLinux/FastvideoSDK/common/BaseAllocator.cpp \
-               $$PWD/../../OtherLibsLinux/FastvideoSDK/common/FastAllocator.cpp
-
-    HEADERS += $$PWD/../../OtherLibsLinux/FastvideoSDK/common/BaseAllocator.h \
-               $$PWD/../../OtherLibsLinux/FastvideoSDK/common/FastAllocator.h
-}
 
 RC_FILE = gpu-camera-sample.rc
 #resource.rc

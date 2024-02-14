@@ -66,17 +66,26 @@ bool PGMCamera::open(uint32_t devID)
 
     QString fileExtension = QFileInfo(mFileName).suffix();
     isRawFile = (fileExtension.toLower() == "raw");
-    printf("isRawFile %b\n", isRawFile);
+    qDebug("isRawFile %d\n", isRawFile);
 
     if(isRawFile)
     {
         printf("if(isRawFile), %p\n", mfile);
         if(mfile == NULL)
         {
-            mfile = fopen(mFileName.toStdString().c_str(), "rb");
+            fclose(mfile);
+            mfile=nullptr;
         }
-        if (mfile == NULL) {
-            printf("Error opening file\n");
+
+//        mfile = fopen(mFileName.toStdString().c_str(), "rb");
+        errno_t err;
+        err = fopen_s(&mfile,mFileName.toStdString().c_str(),"rb");
+        qDebug("err:%d, %p",err,mfile);
+
+        if (err != 0) {
+            qDebug("Error opening file\n");
+            fclose(mfile);
+            mfile=nullptr;
             return false;
         }
 
@@ -307,7 +316,7 @@ void PGMCamera::startStreaming()
         memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);        
     #endif
         mInputBuffer.release();
-        QThread::msleep(1000 / mFPS);
+
         {
             QMutexLocker l(&mLock);
 
@@ -320,6 +329,8 @@ void PGMCamera::startStreaming()
 
             mRawProc->wake();
         }
+
+        QThread::msleep(1000 / mFPS);
     }
 
     stop();

@@ -38,8 +38,8 @@ extern "C"  fastStatus_t fastEnableWatermark(bool isEnabled);
 #include <string.h>
 void saveBMP(const char* filename, unsigned char* rgbbuf, int width, int height) 
 {
-    BITMAPFILEHEADER bfh;  
-    BITMAPINFOHEADER bih;  
+    BITMAPHEADER bfh;  
+    BITMAPINFO_ bih;
     /* 
      * Magic number for file. It does not fit in the header structure due to 
      * alignment requirements, so put it outside 
@@ -49,10 +49,10 @@ void saveBMP(const char* filename, unsigned char* rgbbuf, int width, int height)
     unsigned short bfType=0x4d42;    //'BM'             
     bfh.bfReserved1 = 0;  
     bfh.bfReserved2 = 0;  
-    bfh.bfSize = 2/* 2B魔术字 */+sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)+width*height*3;  
-    bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);  
+    bfh.bfSize = 2/* 2B魔术字 */+sizeof(BITMAPHEADER) + sizeof(BITMAPINFO_)+width*height*3;
+    bfh.bfOffBits = sizeof(BITMAPHEADER) + sizeof(BITMAPINFO_);
   
-    bih.biSize = sizeof(BITMAPINFOHEADER); 
+    bih.biSize = sizeof(BITMAPINFO_);
  
     printf("filesize = %u header size = %u \n", bfh.bfSize, bfh.bfOffBits);
  
@@ -103,7 +103,8 @@ void CUDAProcessorGray::freeFilters()
 
 fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
 {
-    fastStatus_t ret;
+    qDebug("%s\n",__func__);
+    fastStatus_t ret = FAST_OK;
     MallocAllocator alloc;
 
     if(mInitialised)
@@ -113,7 +114,7 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     }
 
     if(info)
-        qDebug("Initialising CUDAProcessorBase...");
+        qDebug("Initialising CUDAProcessorGray...");
 
     mut.lock();
 
@@ -206,6 +207,7 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
 
 fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOptions &opts)
 {
+    qDebug("%s\n",__func__);
     QMutexLocker locker(&mut);
 
     if(image == nullptr)

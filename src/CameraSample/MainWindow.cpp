@@ -404,8 +404,8 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
     ui->cameraStatistics->setCamera(mCameraPtr.data());
 
 //    QTimer::singleShot(1000, this, [this](){
-        //mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
-    ui->cameraController->setExposureCamera(30000);
+//        mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
+//    ui->cameraController->setExposureCamera(30000);
 //    });
 
     connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->gtgWidget, &GtGWidget::setImage);
@@ -487,7 +487,7 @@ void MainWindow::openPGMFile(bool isBayer)
                       isBayer),
                   0);
     // 变更视频文件指针的位置
-    // QObject::connect(mSlider, &QSlider::valueChanged, mCameraPtr.data() , &PGMCamera::setValue);
+//    connect(mSlider, &QSlider::valueChanged, mCameraPtr.data() , &PGMCamera::setValue);
 }
 
 void MainWindow::raw2Rgb(bool update, bool init)

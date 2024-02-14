@@ -40,7 +40,7 @@
 
 #include "fastvideo_sdk_define.h"
 #include "FrameBuffer.h"
-
+#include <chrono>
 #define  FrameEventID (QEvent::User + 1000)
 class FrameEvent : public QEvent
 {

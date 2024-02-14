@@ -18,31 +18,31 @@ FASTVIDEO_SDK = $$FASTVIDEOPATH/fastvideo_sdk
 
 FASTVIDEO_INC  = $$FASTVIDEO_SDK/inc
 FASTVIDEO_INC += $$FASTVIDEOPATH/common
-FASTVIDEO_INC += $$FASTVIDEOPATH/libs/OpenGL/inc
+#FASTVIDEO_INC += $$FASTVIDEOPATH/libs/OpenGL/inc
 
 FFMPEG_PATH = $$OTHER_LIB_PATH/ffmpeg
-FFMPEG_SRC  = $$FFMPEG_PATH/src/ffmpeg-3.4.2.tar.gz
+#FFMPEG_SRC  = $$FFMPEG_PATH/src/ffmpeg-3.4.2.tar.gz
 FFMPEG_LIB  = $$FFMPEG_PATH/lib
 
 FLIR_PATH = $$OTHER_LIB_PATH/FLIR
 IMPERX_PATH = $$OTHER_LIB_PATH/Imperx
 
-FASTVIDEO_LIB  = -L$$FASTVIDEO_SDK/lib/$$PLATFORM
-FASTVIDEO_DLL_PATH = $$FASTVIDEO_SDK/bin/$$PLATFORM
+#FASTVIDEO_LIB  = -L$$FASTVIDEO_SDK/lib/$$PLATFORM
+#FASTVIDEO_DLL_PATH = $$FASTVIDEO_SDK/bin/$$PLATFORM
 
-FASTVIDEO_DLL  = $$FASTVIDEO_DLL_PATH/fastvideo_sdk.dll
-FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_mjpeg.dll
+#FASTVIDEO_DLL  = $$FASTVIDEO_DLL_PATH/fastvideo_sdk.dll
+#FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_mjpeg.dll
 
 #FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_experimentalImageFilter.dll
 #FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_denoise.dll
 
-FASTVIDEO_EXTRA_DLLS += $$FASTVIDEOPATH/libs/senselock/$$PLATFORM/sense4.dll
+#FASTVIDEO_EXTRA_DLLS += $$FASTVIDEOPATH/libs/senselock/$$PLATFORM/sense4.dll
 
 #FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_nppFilter.dll
 #FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_nppResize.dll
 #FASTVIDEO_DLL += $$FASTVIDEO_DLL_PATH/fastvideo_nppGeometry.dll
 
-FASTVIDEO_LIB += -lfastvideo_sdk \
+#FASTVIDEO_LIB += -lfastvideo_sdk \
 #        -lfastvideo_mjpeg \
 #        -lfastvideo_denoise
 #        -lfastvideo_experimentalImageFilter \
@@ -51,13 +51,17 @@ FASTVIDEO_LIB += -lfastvideo_sdk \
 #        -lfastvideo_jpegLosslessDecoder \
 #        -lfastvideo_nppGeometry
 
-FASTVIDEO_EXTRA_LIBS += -L$$FASTVIDEOPATH/libs/OpenGL/lib/win/$$PLATFORM
-FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/bin/avcodec-57.dll
-FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/bin/avformat-57.dll
-FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/bin/avutil-55.dll
-FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/bin/swresample-2.dll
+#FASTVIDEO_EXTRA_LIBS += -L$$FASTVIDEOPATH/libs/OpenGL/lib/win/$$PLATFORM
+FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/lib/avcodec-58.dll
+FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/lib/avformat-58.dll
+FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/lib/avutil-56.dll
+FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/lib/swresample-3.dll
 
-FASTVIDEO_EXTRA_DLLS += $$FFMPEG_SRC
+
+FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
+
+
+#FASTVIDEO_EXTRA_DLLS += $$FFMPEG_SRC
 
 #FASTVIDEO_EXTRA_DLLS += $$[QT_INSTALL_BINS]/icudt58.dll
 #FASTVIDEO_EXTRA_DLLS += $$[QT_INSTALL_BINS]/icuin58.dll
@@ -65,37 +69,37 @@ FASTVIDEO_EXTRA_DLLS += $$FFMPEG_SRC
 #FASTVIDEO_EXTRA_DLLS += $$LIBTIFF_LIB/tiff.dll
 
 #CUDA_TOOLKIT_PATH = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.3"
-CUDA_TOOLKIT_PATH = "/usr/local/cuda"
-CUDAINC += $$CUDA_TOOLKIT_PATH/include
-CUDA_DLL_PATH = $$CUDA_TOOLKIT_PATH/bin
-CUDA_DLL += $$CUDA_DLL_PATH/cudart64_12.dll
+#CUDA_TOOLKIT_PATH = "/usr/local/cuda"
+#CUDAINC += $$CUDA_TOOLKIT_PATH/include
+#CUDA_DLL_PATH = $$CUDA_TOOLKIT_PATH/bin
+#CUDA_DLL += $$CUDA_DLL_PATH/cudart64_12.dll
 
-CUDA_DLL += $$CUDA_DLL_PATH/nppc64_12.dll
-CUDA_DLL += $$CUDA_DLL_PATH/nppif64_12.dll
-CUDA_DLL += $$CUDA_DLL_PATH/nppicc64_12.dll
-CUDA_DLL += $$CUDA_DLL_PATH/nppig64_12.dll
+#CUDA_DLL += $$CUDA_DLL_PATH/nppc64_12.dll
+#CUDA_DLL += $$CUDA_DLL_PATH/nppif64_12.dll
+#CUDA_DLL += $$CUDA_DLL_PATH/nppicc64_12.dll
+#CUDA_DLL += $$CUDA_DLL_PATH/nppig64_12.dll
 
-CUDA_LIB += -lnppicc
-CUDA_LIB += -lnppig
-CUDA_LIB += -lnppif
-CUDA_LIB += -lnpps
-CUDA_LIB += -lnppc
-CUDA_LIB += -lcudart
-CUDA_LIB += -lnvml
+#CUDA_LIB += -lnppicc
+#CUDA_LIB += -lnppig
+#CUDA_LIB += -lnppif
+#CUDA_LIB += -lnpps
+#CUDA_LIB += -lnppc
+#CUDA_LIB += -lcudart
+#CUDA_LIB += -lnvml
 
 # NVIDIA VIDEO CODEC SDK
 # https://developer.nvidia.com/nvidia-video-codec-sdk/download
-NVCODECS = $$OTHER_LIB_PATH/nvcodecs
-INCLUDEPATH += $$NVCODECS/include
-LIBS += -L$$NVCODECS/Lib/$$PLATFORM -lnvcuvid
+#NVCODECS = $$OTHER_LIB_PATH/nvcodecs
+#INCLUDEPATH += $$NVCODECS/include
+#LIBS += -L$$NVCODECS/Lib/$$PLATFORM -lnvcuvid
 
-INCLUDEPATH += $$CUDAINC
+#INCLUDEPATH += $$CUDAINC
 INCLUDEPATH += $$FASTVIDEO_INC
 INCLUDEPATH += $$FASTVIDEOPATH/core_samples
 INCLUDEPATH += $$FFMPEG_PATH/include
 INCLUDEPATH += $$JPEGTURBO/include
 
-QMAKE_CXXFLAGS += "/WX" # Treats all compiler warnings as errors.
+#QMAKE_CXXFLAGS += "/WX" # Treats all compiler warnings as errors.
 #QMAKE_LFLAGS_WINDOWS += "/NODEFAULTLIB:LIBCMT"
 
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Core
@@ -103,7 +107,7 @@ QT_DLLS += Qt"$$QT_MAJOR_VERSION"Gui
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Widgets
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Svg
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Network
-QT_DLLS += Qt"$$QT_MAJOR_VERSION"OpenGL
+#QT_DLLS += Qt"$$QT_MAJOR_VERSION"OpenGL
 #QT_DLLS += Qt5Xml
 #QT_DLLS += Qt5Multimedia
 
@@ -117,12 +121,17 @@ CONFIG(debug, debug|release){
     QMAKE_CXXFLAGS += "/Zi /DEBUG"
 }
 
-LIBS += $$FASTVIDEO_LIB
-LIBS += $$FASTVIDEO_EXTRA_LIBS
+#LIBS += $$FASTVIDEO_LIB
+#LIBS += $$FASTVIDEO_EXTRA_LIBS
 LIBS += -L$$FFMPEG_LIB  -lavcodec -lavformat -lavutil -lswresample
-LIBS += -L$$CUDA_TOOLKIT_PATH/lib/$$PLATFORM -lcudart -lcuda
-LIBS += -lglu32 -lopengl32 -lgdi32 -luser32 -lMscms -lShell32 -lOle32 -lWs2_32 -lstrmiids -lComdlg32
-LIBS += -L$$JPEGTURBO/lib -ljpeg-static -lturbojpeg-static
+#LIBS += -L$$CUDA_TOOLKIT_PATH/lib/$$PLATFORM -lcudart -lcuda
+#LIBS += -lglu32 -lopengl32 -lgdi32 -luser32 -lMscms -lShell32 -lOle32 -lWs2_32 -lstrmiids -lComdlg32
+LIBS += -L$$JPEGTURBO/lib -ljpeg62_8bit
+
+
+
+
+
 
 contains(DEFINES, SUPPORT_XIMEA){
     XI_API_PATH = $$OTHER_LIB_PATH/XIMEA/API

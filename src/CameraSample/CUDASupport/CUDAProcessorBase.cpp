@@ -67,6 +67,7 @@ void CUDAProcessorBase::cudaMemoryInfo(const char *str)
 
 void CUDAProcessorBase::freeFilters()
 {
+    qDebug("%s\n",__func__);
     if(info)
         qDebug("CUDAProcessorBase::freeFilters");
 
@@ -183,7 +184,8 @@ int CUDAProcessorBase::fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fa
 
 fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 {
-    fastStatus_t ret;
+    qDebug("%s\n",__func__);
+    fastStatus_t ret = FAST_OK;
     MallocAllocator alloc;
 
     if(mInitialised)
@@ -269,6 +271,7 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
 
 fastStatus_t CUDAProcessorBase::InitFailed(const char *errStr, fastStatus_t ret)
 {
+    qDebug("%s\n",__func__);
     mErrString = errStr;
     mLastError = ret;
     mInitialised = false;
@@ -276,6 +279,7 @@ fastStatus_t CUDAProcessorBase::InitFailed(const char *errStr, fastStatus_t ret)
     emit error();
     mut.unlock();
     freeFilters();
+    qDebug("%s\n",__func__);
     return ret;
 }
 

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.18)
 option(USE_CUDA ON)
 
 if(USE_CUDA)
-    add_definitions(-DWITH_CUDA)
     if(NOT WIN32)
         set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
     endif()
@@ -20,6 +19,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 if(WIN32)
     set(ARCHITECTURE WIN32)
+#    find_library(UCRTBASED_LIB ucrtbased PATHS "C:/Program Files (x86)/Windows Kits/10/bin/x64/ucrt/")
+#    if(UCRTBASED_LIB)
+#        message("Found ucrtbased.dll: ${UCRTBASED_LIB}")
+#    else()
+#        message(FATAL_ERROR "Could not find ucrtbased.dll")
+#    endif()
+
 else()
     EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 endif()
@@ -76,7 +82,7 @@ find_path(FastVideo_INC
     PATHS ${FastVideo_PATH}/inc/
     REQUIRED)
 
-set(FFMPEG_PATH OtherLibs/ffmpeg)
+set(FFMPEG_PATH ${LIB_DIR}/ffmpeg)
 find_path(FFMPEG_INC
     NAMES libavutil/opt.h
     PATHS ${FFMPEG_PATH}/include
@@ -99,31 +105,19 @@ find_library(AVRESAMPLE_LIB
     REQUIRED)
 set(FFMPEG_LIB ${AVCODEC_LIB} ${AVUTIL_LIB} ${AVFORMAT_LIB} ${AVRESAMPLE_LIB})
 
-if(WIN32)
-    set(THIRD_PARTY_DLLS ${THIRD_PARTY_DLLS}
-        OtherLibs/ffmpeg/bin/avcodec-57.dll
-        OtherLibs/ffmpeg/bin/avformat-57.dll
-        OtherLibs/ffmpeg/bin/avutil-55.dll
-        OtherLibs/ffmpeg/bin/swresample-2.dll
-        if(USE_CUDA)
-            ${CUDAToolkit_LIBRARY_ROOT}/bin/cudart64_110.dll
-        endif()
-    )
-endif()
-
 find_path(JPEG_INC
     NAMES jpeglib.h
-    PATHS OtherLibs/jpeg-turbo/include/
+    PATHS ${LIB_DIR}/jpeg-turbo/include/
     REQUIRED)
 if(WIN32)
     find_library(JPEG_LIB
-        NAMES jpeg-static
-        PATHS OtherLibs/jpeg-turbo/lib/
+        NAMES jpeg62_8bit
+        PATHS ${LIB_DIR}/jpeg-turbo/lib/
         REQUIRED)
-    find_library(TURBOJPEG_LIB
-        NAMES turbojpeg-static
-        PATHS OtherLibs/jpeg-turbo/lib/
-        REQUIRED)
+    # find_library(TURBOJPEG_LIB
+    #     NAMES turbojpeg-static
+    #     PATHS OtherLibs/jpeg-turbo/lib/
+    #     REQUIRED)
     if(USE_CUDA)
         set(ADDITIONAL_LIBS ${CUDAToolkit_LIBRARY_DIR}/cuda.lib opengl32)
     endif()
@@ -137,27 +131,51 @@ else()
     endif()
 endif()
 
+
+if(WIN32)
+    
+    set(THIRD_PARTY_DLLS ${THIRD_PARTY_DLLS}
+        ${LIB_DIR}/ffmpeg/lib/avcodec-58.dll
+        ${LIB_DIR}/ffmpeg/lib/avformat-58.dll
+        ${LIB_DIR}/ffmpeg/lib/avutil-56.dll
+        ${LIB_DIR}/ffmpeg/lib/swresample-3.dll
+        ${LIB_DIR}/jpeg-turbo/lib/jpeg62_8bit.dll
+        
+            
+       
+    )
+    if(USE_CUDA)
+        set(THIRD_PARTY_DLLS ${THIRD_PARTY_DLLS}
+            ${CUDAToolkit_LIBRARY_ROOT}/bin/cudart64_110.dll
+        )
+    endif()
+endif()
+
+
 set(ADDITIONAL_LIBS
     ${ADDITIONAL_LIBS}
     ${Ximea_LIB}
 )
+if(USE_CUDA)
+    if(NOT ${ARCHITECTURE} STREQUAL "aarch64")
+        find_path(VideoCodec_INC
+            NAMES cuviddec.h
+            PATHS ${LIB_DIR}/nvcodecs/include/ ${LIB_DIR}/nvcodecs/Interface/
+            REQUIRED)
+        find_library(VideoCodec_LIB
+            NAMES nvcuvid
+            PATHS ${LIB_DIR}/nvcodecs/Lib/x64/ ${LIB_DIR}/nvcodecs/Lib/linux/stubs/x86_64
+            REQUIRED)
 
-if(NOT ${ARCHITECTURE} STREQUAL "aarch64")
-    find_path(VideoCodec_INC
-        NAMES cuviddec.h
-        PATHS ${LIB_DIR}/nvcodecs/include/ ${LIB_DIR}/nvcodecs/Interface/
-        REQUIRED)
-    find_library(VideoCodec_LIB
-        NAMES nvcuvid
-        PATHS ${LIB_DIR}/nvcodecs/Lib/x64/ ${LIB_DIR}/nvcodecs/Lib/linux/stubs/x86_64
-        REQUIRED)
+        set(ADDITIONAL_INCDIR ${ADDITIONAL_INCDIR}
+            ${VideoCodec_INC})
 
-    set(ADDITIONAL_INCDIR ${ADDITIONAL_INCDIR}
-        ${VideoCodec_INC})
-
-    set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS}
-        ${VideoCodec_LIB})
+        set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS}
+            ${VideoCodec_LIB})
+    endif()
 endif()
+
+
 #find_library(VideoCodec2_LIB
 #    NAMES nvencodeapi
 #    PATHS OtherLibs/nvcodecs/Lib/Win32/
@@ -175,9 +193,9 @@ add_subdirectory(src/CameraSample)
 
 # create a list of files to copy
 set(THIRD_PARTY_DLLS ${THIRD_PARTY_DLLS}
-    #${FASTLIB_DIR}/fastvideo_sdk/bin/x64/fastvideo_sdk.dll
+#    ${FASTLIB_DIR}/fastvideo_sdk/bin/x64/fastvideo_sdk.dll
 )
-
+message(STATUS "THIRD_PARTY_DLLS: ${THIRD_PARTY_DLLS}")
 install(FILES ${THIRD_PARTY_DLLS}
     DESTINATION ${CMAKE_BINARY_DIR}/bin/
 )
