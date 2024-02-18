@@ -135,7 +135,7 @@ void RawProcessor::startWorking()
 {
     mWorking = true;
 
-    qint64 lastTime = 0;
+//    qint64 lastTime = 0;
     QElapsedTimer tm;
     tm.start();
 

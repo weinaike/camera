@@ -38,8 +38,8 @@
 #include <QSlider>
 
 #ifdef CUDA_CUDA
-#include "GLImageViewer.h"
-class GLImageViewer;
+    #include "GLImageViewer.h"
+    class GLImageViewer;
 #endif
 class RawProcessor;
 
@@ -136,6 +136,7 @@ private slots:
 
 
     void on_actionClose_triggered();
+    virtual QMenu *createPopupMenu();
 
 private:
     Ui::MainWindow *ui;

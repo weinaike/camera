@@ -55,7 +55,7 @@ PGMCamera::~PGMCamera()
         fclose(mfile);
         mfile = nullptr;
     }
-    
+
     mCameraThread.quit();
     mCameraThread.wait(3000);
 }
@@ -70,8 +70,8 @@ bool PGMCamera::open(uint32_t devID)
 
     if(isRawFile)
     {
-        printf("if(isRawFile), %p\n", mfile);
-        if(mfile == NULL)
+        qDebug("if(isRawFile), %p\n", mfile);
+        if(mfile != NULL)
         {
             fclose(mfile);
             mfile=nullptr;
@@ -94,10 +94,10 @@ bool PGMCamera::open(uint32_t devID)
         mManufacturer = QStringLiteral("Fastvideo");
         mModel = QStringLiteral("raw video camera simulator");
         mSerial = QStringLiteral("0000");
-        
+
         MallocAllocator a;
-        
-        
+
+
         uint width = 640;
         uint height = 512;
         uint pitch = width * 2;
@@ -167,14 +167,14 @@ bool PGMCamera::open(uint32_t devID)
             printf("if(!mInputBuffer.allocate(mWidth, mHeight, mSurfaceFormat))\n");
             return false;
         }
-            
+
 
         mState = cstStopped;
         emit stateChanged(cstStopped);
 
         return true;
     }
-    
+
 
 
     mState = cstClosed;
@@ -288,13 +288,14 @@ void PGMCamera::startStreaming()
     {
         if(isRawFile)
         {
-            if (!feof(mfile)) 
+            if (!feof(mfile))
             {
                 fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
                 cnt++;
-                
+
                 mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
                 mStatistics[CameraStatEnum::statCurrFrameID] = cnt;
+                mStatistics[CameraStatEnum::statVideoAllFrames] = mSamples;
                 // printf("read frame idx %d\n",cnt);
                 // enum class cmrCameraStatistic {
                 //     statFramesTotal = 0, /// Total number of frames acquired
@@ -308,12 +309,12 @@ void PGMCamera::startStreaming()
 
             }
             mStatistics[CameraStatEnum::statFramesTotal]++;
-            
+
         }
     #ifdef USE_CUDA
         cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
-    #else        
-        memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);        
+    #else
+        memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);
     #endif
         mInputBuffer.release();
 
@@ -323,7 +324,7 @@ void PGMCamera::startStreaming()
             if(cnt >= mSamples - 1)
             {
                 cnt = 0;
-                fseek(mfile, 0, SEEK_SET);     
+                fseek(mfile, 0, SEEK_SET);
                 finish = true;
             }
 
@@ -373,6 +374,7 @@ bool PGMCamera::getParameterInfo(cmrParameterInfo& info)
 void PGMCamera::setValue(int value)
 {
     QMutexLocker l(&mLock);
+    qDebug("PGMCamera:%d",value);
     cnt = value * (mSamples - 1) / 100;
-    fseek(mfile, cnt * mFrameSize, SEEK_SET);     
+    fseek(mfile, cnt * mFrameSize, SEEK_SET);
 }

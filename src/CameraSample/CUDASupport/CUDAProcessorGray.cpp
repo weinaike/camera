@@ -207,7 +207,6 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
 
 fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOptions &opts)
 {
-    qDebug("%s\n",__func__);
     QMutexLocker locker(&mut);
 
     if(image == nullptr)

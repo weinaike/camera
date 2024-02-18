@@ -38,7 +38,7 @@
 #include "ppm.h"
 #include "PGMCamera.h"
 #include "RawProcessor.h"
-//#include "GtGWidget.h"
+#include "ImageResult.h"
 #include "math.h"
 #ifdef SUPPORT_XIMEA
 #include "XimeaCamera.h"
@@ -113,23 +113,29 @@ MainWindow::MainWindow(QWidget *parent) :
     mRendererPtr->setRenderWnd(mMediaViewer.data());
 
 #endif
+
+
+    // Image Result
+
+
+
     // ui->gtgWidget->setFixedSize(640,512);
     // ui->gtgWidget->setStyleSheet("background-color: black");
     // // 前景设置未白色
     // ui->gtgWidget->setStyleSheet("color: white");
-    ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
+//    ui->MediaViewerLayout->insertWidget(0, ui->gtgWidget);
 
-    QLabel* mResultLabel = new QLabel("Hello, world!");
-    mResultLabel->setFixedSize(640,320);
-    mResultLabel->setStyleSheet("background-color: black");
-    ui->MediaViewerLayout->insertWidget(1, mResultLabel);
+//    QLabel* mResultLabel = new QLabel("Hello, world!");
+//    mResultLabel->setFixedSize(640,320);
+//    mResultLabel->setStyleSheet("background-color: black");
+//    ui->MediaViewerLayout->insertWidget(1, mResultLabel);
     
 
-    QSlider *mSlider = new QSlider(Qt::Horizontal);
-    mSlider->setRange(0, 100); // 设置进度条的范围为0到100
-    mSlider->setValue(0); // 设置进度条的初始值为0
+//    QSlider *mSlider = new QSlider(Qt::Horizontal);
+//    mSlider->setRange(0, 100); // 设置进度条的范围为0到100
+//    mSlider->setValue(0); // 设置进度条的初始值为0
 
-    ui->MediaViewerLayout->insertWidget(2, mSlider);
+//    ui->MediaViewerLayout->insertWidget(2, mSlider);
 
     for(int i = 0; i < 16384; i++)
     {
@@ -223,6 +229,7 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         menuPtr->setTitle(QStringLiteral("View"));
         ui->menuBar->insertMenu(ui->actionWB_picker, menuPtr);
+        
     }
 
 #if 0
@@ -274,20 +281,23 @@ MainWindow::MainWindow(QWidget *parent) :
     
     // 去掉不需要的模块
     // removeDockWidget(ui->dockWidget);
-    // ui->dockWidget->hide();
-    // removeDockWidget(ui->processWidget);
-    // ui->processWidget->hide();
-    // removeDockWidget(ui->colorCorrectionWidget);
-    // ui->colorCorrectionWidget->hide();
-    // removeDockWidget(ui->exposureWidget);
-    // ui->exposureWidget->hide();
-    // removeDockWidget(ui->denoiseWidget);
-    // ui->denoiseWidget->hide();
+//    ui->dockWidget->hide();
+//    removeDockWidget(ui->processWidget);
+//    ui->processWidget->hide();
+//    delete ui->processWidget;
+//    removeDockWidget(ui->colorCorrectionWidget);
+//    ui->colorCorrectionWidget->hide();
+//    delete ui->colorCorrectionWidget;
+//    removeDockWidget(ui->exposureWidget);
+//    ui->exposureWidget->hide();
+//    delete ui->exposureWidget;
+    //  removeDockWidget(ui->denoiseWidget);
+    //  ui->denoiseWidget->hide();
     // delete ui->denoiseWidget;
-    // removeDockWidget(ui->benchMarksWidget);
-    // ui->benchMarksWidget->hide();
+//    removeDockWidget(ui->benchMarksWidget);
+//    ui->benchMarksWidget->hide();
     // removeDockWidget(ui->recordingWidget);
-    // ui->recordingWidget->hide();
+//    ui->recordingWidget->hide();
     removeDockWidget(ui->gtgDockWidget);
     ui->gtgDockWidget->hide();
     delete ui->gtgDockWidget;
@@ -298,6 +308,54 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+
+QMenu *MainWindow::createPopupMenu()
+{
+
+    QMenu *menu  = QMainWindow::createPopupMenu();
+
+    QList<QAction *> actions = menu->actions();
+
+    for(auto act : actions)
+    {
+        if(act->text() == QStringLiteral("Denoise"))
+        {
+            ui->denoiseWidget->hide();
+            menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("White balance"))
+        {
+            ui->colorCorrectionWidget->hide();
+            menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("Exposure correction"))
+        {
+            ui->exposureWidget->hide();
+            menu->removeAction(act);
+        }        
+        if(act->text() == QStringLiteral("Benchmarks"))
+        {
+            ui->benchMarksWidget->hide();
+            menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("Processing options"))
+        {
+            ui->processWidget->hide();
+            menu->removeAction(act);
+        }
+    }
+    // ui->dockWidget->hide();
+    // ui->processWidget->hide();
+    // ui->colorCorrectionWidget->hide();
+    // ui->exposureWidget->hide();
+    // ui->denoiseWidget->hide();
+    // ui->benchMarksWidget->hide();
+    // ui->recordingWidget->hide();
+    // ui->cameraStatWidget->hide();
+
+    return menu;
 }
 
 void MainWindow::delayInit()
@@ -403,12 +461,13 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
 
     ui->cameraStatistics->setCamera(mCameraPtr.data());
 
+    ui->result->setCamera(mCameraPtr.data());
 //    QTimer::singleShot(1000, this, [this](){
 //        mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
 //    ui->cameraController->setExposureCamera(30000);
 //    });
 
-    connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->gtgWidget, &GtGWidget::setImage);
+    connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
 }
 
 void MainWindow::openCamera(uint32_t devID)
@@ -481,13 +540,13 @@ void MainWindow::openPGMFile(bool isBayer)
     if(mCameraPtr)
         mCameraPtr->stop();
 
-    initNewCamera(new PGMCamera(
-                      fileName,
-                      (fastBayerPattern_t)ui->cboBayerPattern->currentData().toInt(),
-                      isBayer),
-                  0);
+    PGMCamera * camera = new PGMCamera(fileName, (fastBayerPattern_t)ui->cboBayerPattern->currentData().toInt(), isBayer);
+
     // 变更视频文件指针的位置
-//    connect(mSlider, &QSlider::valueChanged, mCameraPtr.data() , &PGMCamera::setValue);
+    connect(ui->result, SIGNAL(set_video_progress(int)), camera, SLOT(setValue(int)));
+
+    initNewCamera(camera, -1);
+
 }
 
 void MainWindow::raw2Rgb(bool update, bool init)
@@ -1191,6 +1250,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
         }
         ui->actionPlay->setEnabled(false);
         ui->actionRecord->setEnabled(false);
+        ui->result->setStreaming(false);
 
     }
     else if(newState == GPUCameraBase::cstStopped)
@@ -1201,6 +1261,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
             ui->actionPlay->setChecked(false);
         }
         ui->actionRecord->setEnabled(false);
+        ui->result->setStreaming(false);
     }
     else if(newState == GPUCameraBase::cstStreaming)
     {
@@ -1210,6 +1271,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
             ui->actionPlay->setChecked(true);
         }
         ui->actionRecord->setEnabled(true);
+        ui->result->setStreaming(true);
     }
 }
 
@@ -1237,13 +1299,13 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
 
         mCameraPtr->start();
         mProcessorPtr->start();
-        ui->gtgWidget->start();
+        ui->result->start();
 
     }
     else
     {
         mCameraPtr->stop();
-        ui->gtgWidget->stop();
+        ui->result->stop();
     }
 }
 
@@ -1307,6 +1369,7 @@ void MainWindow::on_actionClose_triggered()
     }
     ui->cameraStatistics->setCamera(nullptr);
     ui->cameraController->setCamera(nullptr);
+    ui->result->setCamera(nullptr);
 
     mCameraPtr.reset(nullptr);
     mProcessorPtr.reset(nullptr);

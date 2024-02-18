@@ -29,6 +29,7 @@ SOURCES += main.cpp\
     AppSettings.cpp \
     #FFCReader.cpp \
     #FPNReader.cpp \
+    Widgets/ImageResult.cpp \
     ppm.cpp \
     #helper_jpeg_load.cpp \
     #helper_jpeg_store.cpp \
@@ -57,6 +58,7 @@ HEADERS  += MainWindow.h \
     AppSettings.h \
     #FFCReader.h \
     #FPNReader.h \
+    Widgets/ImageResult.h \
     ppm.h \
     #helper_jpeg.hpp \
     RawProcessor.h \
@@ -180,6 +182,7 @@ contains(TARGET_ARCH, arm64 ) {
 FORMS    += MainWindow.ui \
     Widgets/DenoiseController.ui \
     Widgets/CameraSetupWidget.ui \
+    Widgets/ImageResult.ui \
     Widgets/camerastatistics.ui
 
 

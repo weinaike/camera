@@ -83,7 +83,8 @@ public:
         statCurrFrameID,    /// Current Frame ID (blockID)
         statCurrTimestamp,  /// Current Frame Timestamp
         statCurrTroughputMbs100, /// Average Thoughtput in Megabits per 100 seconds
-        statCurrFps100 /// FPS multiplied by 100
+        statCurrFps100, /// FPS multiplied by 100
+        statVideoAllFrames /// frame of video
     } ;
     
     
@@ -122,7 +123,6 @@ public:
 
     ///Get camera parameter information. Return true on success, false otherwise.
     virtual bool getParameterInfo(cmrParameterInfo& info) = 0;
-
 
     ///Get current camera state
     cmrCameraState state() {return mState;}
@@ -165,6 +165,11 @@ public:
         outStat = mStatistics[stat];
         return true;
     };
+public slots:
+    virtual void setValue(int value)
+    {
+        qDebug("GPUCameraBase:%d\n",value);
+    }
 
 signals:
     void stateChanged(GPUCameraBase::cmrCameraState newState);
