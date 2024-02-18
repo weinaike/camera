@@ -72,6 +72,9 @@ set(SRC
     Widgets/DenoiseController.ui
     Widgets/GtGWidget.cpp
     Widgets/GtGWidget.h
+    Widgets/ImageResult.cpp
+    Widgets/ImageResult.h
+    Widgets/ImageResult.ui
 )
 if(USE_CUDA)
     set(SRC ${SRC}

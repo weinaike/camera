@@ -77,17 +77,27 @@ bool PGMCamera::open(uint32_t devID)
             mfile=nullptr;
         }
 
-//        mfile = fopen(mFileName.toStdString().c_str(), "rb");
-        errno_t err;
-        err = fopen_s(&mfile,mFileName.toStdString().c_str(),"rb");
-        qDebug("err:%d, %p",err,mfile);
+        #ifdef _WIN32
+            errno_t err;
+            err = fopen_s(&mfile,mFileName.toStdString().c_str(),"rb");
+            qDebug("err:%d, %p",err,mfile);
 
-        if (err != 0) {
-            qDebug("Error opening file\n");
-            fclose(mfile);
-            mfile=nullptr;
-            return false;
-        }
+            if (err != 0) {
+                qDebug("Error opening file\n");
+                fclose(mfile);
+                mfile=nullptr;
+                return false;
+            }
+        #else
+            mfile = fopen(mFileName.toStdString().c_str(), "rb");
+            if(mfile == NULL)
+            {
+                qDebug("Error opening file\n");
+                fclose(mfile);
+                mfile=nullptr;
+                return false;
+            }
+        #endif
 
         mState = cstClosed;
 
