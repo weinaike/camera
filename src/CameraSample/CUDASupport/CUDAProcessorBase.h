@@ -89,7 +89,7 @@ public:
 
 
     fastStatus_t exportRawData(void* dstPtr, unsigned int &w, unsigned int &h, unsigned int &pitch);
-
+    int transformToGLBuffer(void *ptr, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt);
     void cudaMemoryInfo(const char *str);
     void clearExifSections();
 
@@ -147,7 +147,7 @@ protected:
 
     int fmtCudaMalloc(void **ptr, int maxWidth, int maxHeight, fastSurfaceFormat_t srcSurfaceFmt);
     int fastCopyToGPU(GPUImage_t *image, void *ptr, fastSurfaceFormat_t SurfaceFmt, int imgWidth, int imgHeight, bool Packed);
-    int transformToGLBuffer(void *ptr, void* hGLBuffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt);
+
 signals:
     void initialized(const QString& info);
     void finished();

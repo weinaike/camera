@@ -89,7 +89,7 @@ ImperxCamera::~ImperxCamera()
 
 }
 
-bool ImperxCamera::open(uint32_t devID)
+bool ImperxCamera::open(int devID)
 {
 
     if(!m_pSystem)

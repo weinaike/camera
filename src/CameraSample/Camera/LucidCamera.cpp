@@ -23,7 +23,7 @@ LucidCamera::~LucidCamera()
     close();
 }
 
-bool LucidCamera::open(uint32_t devID)
+bool LucidCamera::open(int devID)
 {
     using namespace GenApi;
     std::vector<Arena::DeviceInfo> deviceInfos;

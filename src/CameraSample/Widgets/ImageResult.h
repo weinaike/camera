@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "GPUCameraBase.h"
+#include "CUDAProcessorBase.h"
 #include <QStandardItemModel>
 namespace Ui {
 class ImageResult;
@@ -16,6 +17,7 @@ public:
     explicit ImageResult(QWidget *parent = nullptr);
     ~ImageResult();
     void setCamera(GPUCameraBase* cameraPtr){mCamera = cameraPtr;}
+    void setProc(CUDAProcessorBase* proc){mProc = proc;}
     void setStreaming(bool value);
     void start(){mTimer.start();}
     void stop(){mTimer.stop();}
@@ -40,6 +42,7 @@ protected:
 private:
     Ui::ImageResult *ui;
     GPUCameraBase *mCamera{nullptr};
+    CUDAProcessorBase * mProc{nullptr};
     QTimer mTimer;
     QPixmap *mPixmap;
     bool mStream = false;

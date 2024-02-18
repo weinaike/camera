@@ -31,7 +31,7 @@ BaslerCamera::~BaslerCamera()
     PylonTerminate();
 }
 
-bool BaslerCamera::open(uint32_t devID)
+bool BaslerCamera::open(int devID)
 {
     using namespace Pylon;
     using namespace GENAPI_NAMESPACE;

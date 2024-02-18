@@ -104,7 +104,7 @@ public:
 
     ///Connect to camera, initialize internal variables and
     ///allocate required resources
-    virtual bool open(uint32_t devID) = 0;
+    virtual bool open(int devID) = 0;
 
     ///Start streaming frames from camera
     virtual bool start() = 0;
@@ -134,7 +134,7 @@ public:
     float fps(){return mFPS;}
 
     ///Return vendor specific device ID
-    uint32_t devID(){return mDevID;}
+    int devID(){return mDevID;}
 
     ///Return FV SDK compatible surface format
     fastSurfaceFormat_t surfaceFormat(){return mSurfaceFormat;}
@@ -187,7 +187,7 @@ protected:
     int mWhite  = 255;
     int mBblack = 0;
 
-    uint32_t mDevID = 0;
+    int mDevID = 0;
 
     bool                mIsColor = true;
     cmrCameraState      mState = cstClosed;

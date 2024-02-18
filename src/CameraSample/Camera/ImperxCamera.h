@@ -316,7 +316,7 @@ public:
     ImperxCamera();
     ~ImperxCamera();
 
-    virtual bool open(uint32_t devID);
+    virtual bool open(int devID);
     virtual bool start();
     virtual bool stop();
     virtual void close();

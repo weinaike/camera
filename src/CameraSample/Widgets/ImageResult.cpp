@@ -4,7 +4,8 @@
 #include <QDateTime>
 #include <QScreen>
 #include <QPainter>
-
+#include "FrameBuffer.h"
+#include <QTime>
 using CameraStatEnum = GPUCameraBase::cmrCameraStatistic  ;
 ImageResult::ImageResult(QWidget *parent) :
     QWidget(parent),
@@ -15,6 +16,7 @@ ImageResult::ImageResult(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->horizontalSlider, &QSlider::valueChanged, this,&ImageResult::set_slider_value);
+    ui->horizontalSlider->setTracking(false);
     // Set update timer
     connect(&mTimer, &QTimer::timeout, this, &ImageResult::UpdateSlider);
     mTimer.setSingleShot(false);
@@ -48,15 +50,21 @@ ImageResult::~ImageResult()
 
 void ImageResult::setStreaming(bool value)
 {
-    if(value == true)
-    {
-        ui->horizontalSlider->setEnabled(false);
-    }
-    else
-    {
-        ui->horizontalSlider->setEnabled(true);
-    }
     mStream = value;
+    ui->horizontalSlider->setEnabled(false);
+    if(mCamera != nullptr)
+    {
+        if (mCamera->devID() < 0)
+        {
+            // 播放视频文件过程中， 不能手动设置
+            // 只有导入视频，并且暂停播放，才可滑倒slider
+            if(value == false)
+            {
+                ui->horizontalSlider->setEnabled(true);
+            }
+        }
+    }
+
 }
 
 
@@ -64,18 +72,32 @@ void ImageResult::setStreaming(bool value)
 void ImageResult::set_slider_value(int value)
 {
     qDebug("%s %d",__func__, value);
-    emit set_video_progress(value);
+    if(mCamera != nullptr)
+    {
+        emit set_video_progress(value);
+        QThread::msleep(100);
+        // 更新图片
+        GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
+
+        // 显示
+        mProc->transformToGLBuffer(img->data.get(), mProc->GetFrameBuffer(), img->w, img->h, img->surfaceFmt);
+        setImage((unsigned char *) mProc->GetFrameBuffer(), img->w, img->h, img->w);
+
+    }
 }
 
 
 void ImageResult::UpdateSlider()
 {
+    QSignalBlocker b(ui->horizontalSlider);
+
     if(mCamera != nullptr && mStream == true)
     {
         uint64_t cnt = 0;
         uint64_t all = 0;
-        if( mCamera->GetStatistics(CameraStatEnum::statCurrFrameID, cnt)
-            &&  mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all) )
+
+        if( (mCamera->devID() < 0) && mCamera->GetStatistics(CameraStatEnum::statCurrFrameID, cnt)
+            &&  mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all))
         {
             if (all > 0)
             {

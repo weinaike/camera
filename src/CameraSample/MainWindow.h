@@ -118,10 +118,10 @@ private slots:
     void onNewWBFromPoint(const QPoint& pt);
 
     //Camera
-    void openCamera(uint32_t devID);
+    void openCamera(int devID);
     void openCameraObj(GPUCameraBase* camera);
     void openPGMFile(bool isBayer = true);
-    void initNewCamera(GPUCameraBase* cmr, uint32_t devID);
+    void initNewCamera(GPUCameraBase* cmr, int devID);
     void onCameraStateChanged(GPUCameraBase::cmrCameraState newState);
     void on_actionOpenBayerPGM_triggered();
     void on_actionOpenGrayPGM_triggered();
@@ -136,7 +136,7 @@ private slots:
 
 
     void on_actionClose_triggered();
-    virtual QMenu *createPopupMenu();
+    virtual QMenu *createPopupMenu() override;
 
 private:
     Ui::MainWindow *ui;

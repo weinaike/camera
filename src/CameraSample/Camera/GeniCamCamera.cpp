@@ -25,7 +25,7 @@ GeniCamCamera::~GeniCamCamera()
     rcg::System::clearSystems();
 }
 
-bool GeniCamCamera::open(uint32_t devID)
+bool GeniCamCamera::open(int devID)
 {
     using namespace GenApi;
 

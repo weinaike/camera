@@ -384,17 +384,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
 
-    if(mCameraPtr)
-        mCameraPtr->stop();
+    ui->result->stop();
 
     if(mProcessorPtr)
         mProcessorPtr->stop();
+    QThread::msleep(20);
+
+    if(mCameraPtr)
+        mCameraPtr->stop();
+
+    QThread::msleep(50);
 
     QMainWindow::closeEvent(event);
 
 }
 
-void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
+void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 {
     ui->cameraController->setCamera(nullptr);
     mCameraPtr.reset(cmr);
@@ -462,6 +467,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
     ui->cameraStatistics->setCamera(mCameraPtr.data());
 
     ui->result->setCamera(mCameraPtr.data());
+    ui->result->setProc(mProcessorPtr->getCUDAProcessor());
 //    QTimer::singleShot(1000, this, [this](){
 //        mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
 //    ui->cameraController->setExposureCamera(30000);
@@ -470,7 +476,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, uint32_t devID)
     connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
 }
 
-void MainWindow::openCamera(uint32_t devID)
+void MainWindow::openCamera(int devID)
 {
 #ifdef SUPPORT_XIMEA
     if(mCameraPtr)

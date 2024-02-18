@@ -135,7 +135,7 @@ XimeaCamera::~XimeaCamera()
     mCameraThread.quit();
     mCameraThread.wait(3000);
 }
-bool XimeaCamera::open(uint32_t devID)
+bool XimeaCamera::open(int devID)
 {
     XI_RETURN ret = XI_OK;
     try

@@ -20,7 +20,7 @@ private:
 
     // GPUCameraBase interface
 public:
-    bool open(uint32_t devID);
+    bool open(int devID);
     bool start();
     bool stop();
     void close();

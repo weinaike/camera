@@ -406,7 +406,7 @@ void MIPICamera::startStreaming()
     mCamera->close();
 }
 
-bool MIPICamera::open(uint32_t devID)
+bool MIPICamera::open(int devID)
 {
     mCamera->setDev(devID);
     bool res = mCamera->open();

@@ -40,7 +40,7 @@ class PGMCamera : public GPUCameraBase
 public:
     PGMCamera(const QString& fileName, fastBayerPattern_t pattern, bool isColor = true);
     ~PGMCamera();
-    virtual bool open(uint32_t devID);
+    virtual bool open(int devID);
     virtual bool start();
     virtual bool stop();
     virtual void close();

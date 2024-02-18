@@ -60,9 +60,9 @@ PGMCamera::~PGMCamera()
     mCameraThread.wait(3000);
 }
 
-bool PGMCamera::open(uint32_t devID)
+bool PGMCamera::open(int devID)
 {
-    Q_UNUSED(devID);
+    mDevID = devID;
 
     QString fileExtension = QFileInfo(mFileName).suffix();
     isRawFile = (fileExtension.toLower() == "raw");
@@ -386,5 +386,18 @@ void PGMCamera::setValue(int value)
     QMutexLocker l(&mLock);
     qDebug("PGMCamera:%d",value);
     cnt = value * (mSamples - 1) / 100;
-    fseek(mfile, cnt * mFrameSize, SEEK_SET);
+    if(isRawFile)
+    {
+        fseek(mfile, cnt * mFrameSize, SEEK_SET);
+
+        //获取当前帧
+        fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
+        cnt++;
+        #ifdef USE_CUDA
+            cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
+        #else
+            memcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h);
+        #endif
+        mInputBuffer.release();
+    }
 }

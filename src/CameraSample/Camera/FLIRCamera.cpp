@@ -74,7 +74,7 @@ FLIRCamera::~FLIRCamera()
     mSystem->ReleaseInstance();
 }
 
-bool FLIRCamera::open(uint32_t devID)
+bool FLIRCamera::open(int devID)
 {
     using namespace GenApi;
 
