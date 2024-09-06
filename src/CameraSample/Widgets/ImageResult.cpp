@@ -6,7 +6,16 @@
 #include <QPainter>
 #include "FrameBuffer.h"
 #include <QTime>
+
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QChart>
+#include <QVBoxLayout>
+#include <QtMath>
+QT_CHARTS_USE_NAMESPACE
+
 using CameraStatEnum = GPUCameraBase::cmrCameraStatistic  ;
+
 ImageResult::ImageResult(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ImageResult),
@@ -40,6 +49,46 @@ ImageResult::ImageResult(QWidget *parent) :
 //    verticalHeaders << (QString::fromUtf8("熔透")) << (QString::fromUtf8("熔深")) << (QString::fromUtf8("成型稳定性"));
     mModel->setVerticalHeaderLabels(verticalHeaders);
     ui->resultTable->setModel(mModel);
+
+
+
+
+    QLineSeries *series = new QLineSeries();
+
+    // 创建一个图表对象
+    QChart *chart = new QChart();
+    chart->legend()->hide();
+    chart->addSeries(series);
+    chart->createDefaultAxes();
+    chart->setTitle("Real-time data curve");
+
+    // 创建一个图表视图对象
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+
+    QVBoxLayout *layout = new QVBoxLayout(ui->chartContainer);
+    layout->addWidget(chartView);
+
+    // 模拟实时数据更新
+
+    connect(&mTimer, &QTimer::timeout, this, [series, chart]() {
+        static int x = 0;
+        series->append(x, qSin(x / 1000) );
+        x++;
+
+        // 自适应调整坐标系
+        chart->axisX()->setRange(0, x);
+        chart->axisY()->setRange(-1, 1); // 假设 y 值在 -1 到 1 之间
+    });
+
+
+
+
+
+
+
+
+
 }
 
 
@@ -64,7 +113,6 @@ void ImageResult::setStreaming(bool value)
             }
         }
     }
-
 }
 
 
@@ -131,7 +179,6 @@ void ImageResult::setImage(unsigned char * ptr, int w, int h, int step)
         // 输出错误信息
         qDebug("ImageResult::setImage: unsupported format");
     }
-//     ui->showImage->update();
 }
 
 
@@ -139,10 +186,34 @@ void ImageResult::setImage(unsigned char * ptr, int w, int h, int step)
 void ImageResult::paintEvent(QPaintEvent *event)
 {
      Q_UNUSED(event)
-    // QPainter painter(ui->showImage);
-    // painter.drawPixmap(0, 0, *mPixmap);
-    ui->showImage->clear();
     ui->showImage->setPixmap(*mPixmap);
+}
+
+
+void ImageResult::get_result(WeldResult result)
+{
+    mResults.push_back(result);
+    if(mResults.size() > 10)
+    {
+        mResults.erase(mResults.begin());
+    }
+    // printf("get_result:     frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f\n", 
+        // result.frame_id, result.camera_id, result.weld_status, result.status_score, result.weld_depth, result.front_quality, result.back_quality);
+
+    
+        // 填写表格内容
+    mModel->setItem(0, 0, new QStandardItem(QString::number(result.weld_status)));
+    mModel->setItem(0, 1, new QStandardItem(QString::number(result.status_score)));
+    mModel->setItem(0, 2, new QStandardItem("0.95"));
+
+    mModel->setItem(1, 0, new QStandardItem(QString::number(result.weld_depth)));
+    mModel->setItem(1, 1, new QStandardItem("Prediction2"));
+    mModel->setItem(1, 2, new QStandardItem("0.85"));
+
+    mModel->setItem(2, 0, new QStandardItem("TrueValue3"));
+    mModel->setItem(2, 1, new QStandardItem(QString::number(result.back_quality)));
+    mModel->setItem(2, 2, new QStandardItem(QString::number(result.front_quality)));
+
 
 }
 

@@ -39,6 +39,11 @@
 
 #include "CUDAProcessorOptions.h"
 #include "AsyncFileWriter.h"
+#include "GLImageViewer.h"
+#include "PublicData.h"
+#include "ControlData.h"
+#include "PublicPipeline.h"
+#include "WeldData.h"
 
 class CUDAProcessorBase;
 class CircularBuffer;
@@ -76,6 +81,7 @@ signals:
     void finished();
     void error();
     void show_image(unsigned char * ptr, int w, int h, int step);
+    void send_result(WeldResult result);
 
 public slots:
 
@@ -98,6 +104,8 @@ private:
     QString              mFilePrefix;
     unsigned             mFrameCnt = 0;
     QString              mUrl;
+
+    std::shared_ptr<ZJVIDEO::PublicPipeline> mPipe;
 
     void startWorking();
 };

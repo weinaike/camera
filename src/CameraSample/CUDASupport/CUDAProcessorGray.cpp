@@ -156,7 +156,8 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     unsigned bufferSize = maxPitch * options.MaxHeight * sizeof(unsigned char);
     printf("CUDAProcessorGray hGLBuffer:bufferSize %d, w %d, h %d\n", bufferSize, maxWidth, maxHeight);
 
-#ifdef  USE_CUDA
+#ifdef ENABLE_GL
+    // 采用OPENGL显示
 
     if(cudaMalloc( &hGLBuffer, bufferSize ) != cudaSuccess)
     {
@@ -183,6 +184,7 @@ fastStatus_t CUDAProcessorGray::Init(CUDAProcessorOptions &options)
     stats[QStringLiteral("allocatedMem")] = requestedMemSpace;
     stats[QStringLiteral("elapsedTime")] = mcs;
 #else
+    // 采用ImageResult显示
     unsigned int width = options.Width;
     unsigned int height = options.Height;
     if (srcSurfaceFmt > 4)
@@ -241,8 +243,8 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
         return TransformFailed("Unsupported image size",FAST_INVALID_FORMAT,profileTimer);
 
     
-#ifdef USE_CUDA
-
+#ifdef ENABLE_GL
+    // OPENGL显示， 仅支持RGB24格式
     //copy image to GPU
     fastCopyToGPU(image, srcBuffer, opts.SurfaceFmt, imgWidth, imgHeight, opts.Packed);
     
@@ -263,11 +265,10 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
         cudaDeviceSynchronize();
     }
 #else
+    // 采用GtGWidget显示， 支持灰度显示， 与RGB24显示， 当前仅支持灰度显示
     transformToGLBuffer(image->data.get(), hGLBuffer, imgWidth, imgHeight, opts.SurfaceFmt);
     memcpy(mSrcCpuPtr, hGLBuffer, imgWidth * imgHeight * sizeof(unsigned char) );
 #endif
-
-
 
     locker.unlock();
 

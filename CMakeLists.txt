@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
-option(USE_CUDA ON)
+OPTION(USE_CUDA  "使能CUDA库"   ON)
+message(STATUS "USE_CUDA: ${USE_CUDA}")
 
 if(USE_CUDA)
     if(NOT WIN32)
@@ -8,6 +9,10 @@ if(USE_CUDA)
     endif()
 
     project(gpu-camera-sample VERSION 1.0 LANGUAGES CUDA CXX)
+    # 设置宏
+    add_definitions(-DUSE_CUDA)
+    # add_definitions(-DENABLE_GL)
+    set(CMAKE_CXX_STANDARD 11)
 else()
     project(gpu-camera-sample VERSION 1.0 LANGUAGES CXX)
 endif()
@@ -40,9 +45,12 @@ set(CMAKE_AUTORCC ON)
 
 if(USE_CUDA)
     find_package(CUDAToolkit REQUIRED)
-    find_package(Qt5 COMPONENTS Gui Widgets OpenGL Network REQUIRED)
+    find_package(Qt5 COMPONENTS Gui Widgets OpenGL Network Charts REQUIRED)
+    # 打印查找到的CUDA库
+    message(STATUS "CUDA libraries: ${CUDAToolkit_LIBRARY_DIR}")
 else()
-    find_package(Qt5 COMPONENTS Gui Widgets Network REQUIRED)
+    find_package(Qt5 COMPONENTS Gui Widgets Network Charts REQUIRED)
+    message(STATUS "No CUDA libraries")
 endif()
 
 
@@ -103,12 +111,57 @@ find_library(AVRESAMPLE_LIB
     NAMES swresample
     PATHS ${FFMPEG_PATH}/lib
     REQUIRED)
-set(FFMPEG_LIB ${AVCODEC_LIB} ${AVUTIL_LIB} ${AVFORMAT_LIB} ${AVRESAMPLE_LIB})
+
+find_library(LIBSWSCALE_LIB
+    NAMES swscale
+    PATHS /usr/local/lib /usr/lib
+    )    
+set(FFMPEG_LIB ${AVCODEC_LIB} ${AVUTIL_LIB} ${AVFORMAT_LIB} ${AVRESAMPLE_LIB} ${LIBSWSCALE_LIB})
 
 find_path(JPEG_INC
     NAMES jpeglib.h
     PATHS ${LIB_DIR}/jpeg-turbo/include/
     REQUIRED)
+
+find_path(ZJV_INC
+    NAMES PublicPipeline.h
+    PATHS ${LIB_DIR}/zjv/inc/
+    REQUIRED)
+
+find_library(ZJV_LIB
+    NAMES zj_pipe
+    PATHS ${LIB_DIR}/zjv/libs
+    REQUIRED)
+
+find_library(ZJV_LIB_CUDA
+    NAMES cuda_lib
+    PATHS ${LIB_DIR}/zjv/libs
+    REQUIRED)
+
+find_library(ONNX
+    NAMES onnxruntime
+    PATHS ${LIB_DIR}/zjv/libs
+    REQUIRED)
+
+
+# set(TENSORRT_ROOT_DIR /usr/local/TensorRT-8.6.1.6_cuda11.8/)
+set(TENSORRT_ROOT_DIR /usr/local/TensorRT-8.6.1.6_cuda12.0/)
+
+include_directories(${TENSORRT_ROOT_DIR}/include)
+link_directories(${TENSORRT_ROOT_DIR}/lib)
+
+set(TRT_LIBS nvinfer nvonnxparser  ${TENSORRT_ROOT_DIR}/lib/libnvinfer_plugin.so.8)
+
+
+# set(CUNDD_ROOT_DIR /usr/local/cudnn-cuda11/)
+set(CUNDD_ROOT_DIR /usr/local/cudnn-cuda12/)
+
+include_directories(${CUNDD_ROOT_DIR}/include)
+link_directories(${CUNDD_ROOT_DIR}/lib)
+
+set(CUDNN_LIBS cudnn)
+
+
 if(WIN32)
     find_library(JPEG_LIB
         NAMES jpeg62_8bit
@@ -155,6 +208,12 @@ endif()
 set(ADDITIONAL_LIBS
     ${ADDITIONAL_LIBS}
     ${Ximea_LIB}
+    ${ZJV_LIB}
+    ${ZJV_LIB_CUDA}
+    ${ONNX}
+    ${TRT_LIBS}
+    ${CUDNN_LIBS}
+    ${FFMPEG_LIB}
 )
 if(USE_CUDA)
     if(NOT ${ARCHITECTURE} STREQUAL "aarch64")
@@ -187,6 +246,7 @@ set(ADDITIONAL_INCDIR ${ADDITIONAL_INCDIR}
     ${FastVideo_INC}/../../core_samples
     ${FFMPEG_INC}
     ${JPEG_INC}
+    ${ZJV_INC}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 add_subdirectory(src/CameraSample)

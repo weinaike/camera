@@ -103,7 +103,7 @@ fastSurfaceFormat_t CircularBuffer::surfaceFmt()
 {
     return  mImages.empty() ? FAST_I8 : mImages.front().surfaceFmt;
 }
-
+// 调用该函数，主要目的是为了写入图像数据
 unsigned char* CircularBuffer::getBuffer()
 {
     if(mImages.empty())
@@ -113,6 +113,7 @@ unsigned char* CircularBuffer::getBuffer()
     if(num == mLast)
         num = (mCurrent + 2) % numBuffers;
     mCurrent = num;
+    mImages[mCurrent].frameID = mWritten;
     return mImages[mCurrent].data.get();
 }
 

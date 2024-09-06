@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QLabel" name="showImage">
+  <widget class="CustomLabel" name="showImage">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -185,7 +185,31 @@
     <number>32</number>
    </attribute>
   </widget>
+  <widget class="QWidget" name="chartContainer">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>0</y>
+     <width>600</width>
+     <height>512</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>200</width>
+     <height>200</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>600</width>
+     <height>512</height>
+    </size>
+   </property>
+  </widget>
  </widget>
+
+   
  <resources/>
  <connections/>
 </ui>

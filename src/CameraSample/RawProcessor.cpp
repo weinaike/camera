@@ -39,6 +39,9 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QPoint>
+#include "FrameData.h"
+
+#include <string>
 
 RawProcessor::RawProcessor(GPUCameraBase *camera, GLRenderer *renderer):QObject(nullptr),
     mCamera(camera),
@@ -70,6 +73,10 @@ RawProcessor::RawProcessor(GPUCameraBase *camera):QObject(nullptr),
     mCUDAThread.setObjectName(QStringLiteral("CUDAThread"));
     moveToThread(&mCUDAThread);
     mCUDAThread.start();
+
+    
+
+    
 }
 
 
@@ -83,6 +90,15 @@ RawProcessor::~RawProcessor()
 fastStatus_t RawProcessor::init()
 {
     printf("RawProcessor::init() start\n");
+    std::string cfg_file = "../configure/pipeline_welding.json";
+    mPipe = ZJVIDEO::PublicPipeline::create(cfg_file);
+    mPipe->init();
+
+    std::shared_ptr<ZJVIDEO::SetLoggerLevelControlData> level = std::make_shared<ZJVIDEO::SetLoggerLevelControlData>();
+    level->set_level(ZJVIDEO::ZJV_LOGGER_LEVEL_INFO);
+    std::shared_ptr<ZJVIDEO::ControlData> base_level = std::dynamic_pointer_cast<ZJVIDEO::ControlData>(level);
+    mPipe->control(base_level);
+
     if(!mProcessorPtr)
         return FAST_INVALID_VALUE;
 
@@ -91,6 +107,7 @@ fastStatus_t RawProcessor::init()
 
 void RawProcessor::start()
 {
+    mPipe->start();
     if(!mProcessorPtr || mCamera == nullptr)
         return;
 
@@ -101,6 +118,8 @@ void RawProcessor::stop()
 {
     mWorking = false;
     mWaitCond.wakeAll();
+
+    mPipe->stop();
 
     if(mFileWriterPtr)
     {
@@ -135,7 +154,7 @@ void RawProcessor::startWorking()
 {
     mWorking = true;
 
-//    qint64 lastTime = 0;
+    qint64 lastTime = 0;
     QElapsedTimer tm;
     tm.start();
 
@@ -173,44 +192,93 @@ void RawProcessor::startWorking()
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
 
+        if(mPipe)
+        {      
+            std::shared_ptr<ZJVIDEO::FrameData> frame = std::make_shared<ZJVIDEO::FrameData>(img->w, img->h, ZJVIDEO::ZJV_IMAGEFORMAT_GRAY8);
+            frame->frame_id =  img->frameID;
+            #if USE_CUDA
+                cudaMemcpy(frame->data->mutable_gpu_data(), img->data.get(), frame->data->size(), cudaMemcpyDeviceToDevice);
+                mPipe->set_input_data(frame);
+            #else
+                memcpy(frame->data->mutable_cpu_data(), img->data.get(), frame->data->size());
+                mPipe->set_input_data(frame);
+            #endif
+
+            std::vector<std::shared_ptr<ZJVIDEO::EventData> > datas;
+            datas.clear();
+            mPipe->get_output_data(datas);
+
+            for(const auto & data : datas)
+            {
+                for(const auto & extra : data->extras)
+                {
+                    if(extra->data_name == "WeldResult")
+                    {
+                        std::shared_ptr<const ZJVIDEO::WeldResultData> weld = std::dynamic_pointer_cast<const ZJVIDEO::WeldResultData>(extra);
+
+                        if(weld->is_enable)
+                        {
+                            WeldResult weld_result = {0} ;
+                            weld_result.frame_id = weld->frame_id;
+                            weld_result.camera_id = weld->camera_id;
+                            weld_result.weld_status = weld->weld_status;
+                            weld_result.status_score = weld->status_score;
+                            weld_result.weld_depth = weld->weld_depth;
+                            weld_result.front_quality = weld->front_quality;
+                            weld_result.back_quality = weld->back_quality;
+
+                            emit send_result(weld_result);
+
+                            // printf("WeldResult:     frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f\n", 
+                            //     weld->frame_id, weld->camera_id, weld->weld_status, weld->status_score, weld->weld_depth, weld->front_quality, weld->back_quality);
+                        }                
+                    }
+                }            
+            }
+        }
+
         // 显示
         mProcessorPtr->Transform(img, mOptions);
 
-    #ifdef USE_CUDA
-        if(mRenderer)
-        {
-            qint64 curTime = tm.elapsed();
-/// arm processor cannot show 60 fps
-#ifdef __ARM_ARCH
-            const qint64 frameTime = 32;
-            if(curTime - lastTime >= frameTime)
-#endif
+        #ifdef ENABLE_GL
+            if(mRenderer)
             {
-                if(mOptions.ShowPicture){
-                    mRenderer->loadImage(mProcessorPtr->GetFrameBuffer(), mOptions.Width, mOptions.Height);
-                    mRenderer->update();
+                qint64 curTime = tm.elapsed();
+                /// arm processor cannot show 60 fps
+                #ifdef __ARM_ARCH
+                const qint64 frameTime = 32;
+                if(curTime - lastTime >= frameTime)
+                #endif
+                {
+                    if(mOptions.ShowPicture){
+                        mRenderer->loadImage(mProcessorPtr->GetFrameBuffer(), mOptions.Width, mOptions.Height);
+                        mRenderer->update();
+                    }
+                    lastTime = curTime;
+
+                    emit finished();
+                }
+            }
+        #else
+            // 在将图片传输给GtGWidget进行实现， 控制显示帧率
+            qint64 curTime = tm.elapsed();
+            const qint64 frameTime = 1000 / mRenderFps;
+            if(curTime - lastTime >= frameTime)
+            {
+                // to minimize delay in main thread
+                unsigned char * GLBuffer = (unsigned char * ) mProcessorPtr->GetFrameBuffer();
+                if (mOptions.SurfaceFmt > 4)
+                {
+                    emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width * 3);
+                }
+                else
+                {
+                    emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width);
                 }
                 lastTime = curTime;
-
-                emit finished();
+                emit finished();            
             }
-        }
-    #else
-            // 在将图片传输给GtGWidget进行实现
-        {
-            // to minimize delay in main thread
-            unsigned char * GLBuffer = (unsigned char * ) mProcessorPtr->GetFrameBuffer();
-            if (mOptions.SurfaceFmt > 4)
-            {
-                emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width * 3);
-            }
-            else
-            {
-                emit show_image(GLBuffer,  mOptions.Width,  mOptions.Height, mOptions.Width);
-            }
-            emit finished();            
-        }
-    #endif
+        #endif
 
         if(mWriting && mFileWriterPtr)
         {
@@ -224,6 +292,7 @@ void RawProcessor::startWorking()
                     task->fileName =  QStringLiteral("%1/%2%3.jpg").arg(mOutputPath,mFilePrefix).arg(mFrameCnt);
                     task->size = mFileWriterPtr->bufferSize();
                     task->data = buf;
+                    // 获取处理后的图片数据，如果图片不需要处理，可以直接获取原始图片数据
                     mProcessorPtr->exportJPEGData(task->data, mOptions.JpegQuality, task->size);
                     mFileWriterPtr->put(task);
                     mFileWriterPtr->wake();

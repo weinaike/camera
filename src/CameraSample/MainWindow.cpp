@@ -40,6 +40,8 @@
 #include "RawProcessor.h"
 #include "ImageResult.h"
 #include "math.h"
+#include "WeldData.h"
+
 #ifdef SUPPORT_XIMEA
 #include "XimeaCamera.h"
 #endif
@@ -99,8 +101,8 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         return;
     }
-
-
+#endif
+#ifdef ENABLE_GL
     mRendererPtr.reset(new GLRenderer());
 
     mMediaViewer.reset(new GLImageViewer(mRendererPtr.data()));
@@ -179,6 +181,7 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     {
         QSignalBlocker b(ui->cboSamplingFmt);
+        ui->cboSamplingFmt->addItem(QStringLiteral("Y"), FAST_JPEG_Y);
         ui->cboSamplingFmt->addItem(QStringLiteral("420"), FAST_JPEG_420);
         ui->cboSamplingFmt->addItem(QStringLiteral("422"), FAST_JPEG_422);
         ui->cboSamplingFmt->addItem(QStringLiteral("444"), FAST_JPEG_444);
@@ -195,7 +198,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cboGamma->addItem("Linear", ogLinear);
     ui->cboGamma->addItem("sRGB", ogsRGB);
     ui->cboGamma->setCurrentIndex(0);
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     mMediaViewer->setViewMode(ui->chkZoomFit->isChecked() ? GLImageViewer::vmZoomFit : GLImageViewer::vmPan);
     connect(mMediaViewer.data(), SIGNAL(zoomChanged(qreal)), this, SLOT(onZoomChanged(qreal)));
     connect(mMediaViewer.data(), SIGNAL(newWBFromPoint(QPoint)), this, SLOT(onNewWBFromPoint(QPoint)));
@@ -221,6 +224,7 @@ MainWindow::MainWindow(QWidget *parent) :
     openButton->addAction(ui->actionOpenGrayPGM);
 
     qRegisterMetaType<GPUCameraBase::cmrCameraState>("cmrCameraState");
+    qRegisterMetaType<WeldResult>("WeldResult");
 
 
     // View
@@ -362,7 +366,7 @@ void MainWindow::delayInit()
 {
     readSettings();
     onCameraStateChanged(GPUCameraBase::cstClosed);
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     mRendererPtr->update();
 #endif
 }
@@ -420,7 +424,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
             SLOT(onCameraStateChanged(GPUCameraBase::cmrCameraState)));
 
 
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data(), mRendererPtr.data()));
 #else
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data()));
@@ -456,7 +460,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 
     mStatusLabel->setText(msg);
 
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     mRendererPtr->setImageSize(QSize(mOptions.Width, mOptions.Height));
     on_chkZoomFit_toggled(ui->chkZoomFit->isChecked());
 #endif
@@ -474,6 +478,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 //    });
 
     connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
+    connect(mProcessorPtr.data(), &RawProcessor::send_result, ui->result, &ImageResult::get_result);
 }
 
 void MainWindow::openCamera(int devID)
@@ -533,11 +538,11 @@ void MainWindow::openCameraObj(GPUCameraBase *camera)
 
 void MainWindow::openPGMFile(bool isBayer)
 {
-    QString fileName = QFileDialog::getOpenFileName(this,
-                                                    QStringLiteral("Select pgm file"),
-                                                    mCurrentDir,
-                                                    QStringLiteral("Images (*.pgm *.raw)"));
-
+    // QString fileName = QFileDialog::getOpenFileName(this,
+    //                                                 QStringLiteral("Select raw file"),
+    //                                                 mCurrentDir,
+    //                                                 QStringLiteral("Video (*.raw)"));
+    QString fileName = "/home/wnk/code/camera_sample/Img/video_640_512_8bit.raw";
     if(fileName.isEmpty())
         return;
     printf("fileName:%s\n", fileName.toStdString().c_str());
@@ -580,7 +585,7 @@ void MainWindow::on_chkZoomFit_toggled(bool checked)
 {
     if(checked)
     {
-    #ifdef USE_CUDA
+    #ifdef ENABLE_GL
         mMediaViewer->setViewMode(GLImageViewer::vmZoomFit);
     #endif
         ui->btnResetZoom->setEnabled(false);
@@ -589,7 +594,7 @@ void MainWindow::on_chkZoomFit_toggled(bool checked)
     }
     else
     {
-    #ifdef USE_CUDA
+    #ifdef ENABLE_GL
         mMediaViewer->setViewMode(GLImageViewer::vmPan);
     #endif
         ui->btnResetZoom->setEnabled(true);
@@ -600,7 +605,7 @@ void MainWindow::on_chkZoomFit_toggled(bool checked)
 
 void MainWindow::on_sldZoom_valueChanged(int value)
 {
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     mMediaViewer->setZoom((float)value / 100);
 #endif
     ui->lblZoom->setText(QString("%1%").arg(value));
@@ -954,7 +959,7 @@ void MainWindow::on_actionWB_picker_toggled(bool arg1)
 
     if(!mCameraPtr->isColor())
         return;
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     if(arg1)
     {
         mMediaViewer->setCurrentTool(GLImageViewer::tlWBPicker);
@@ -1299,7 +1304,7 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         mProcessorPtr->updateOptions(mOptions);
         mProcessorPtr->init();
 
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
         mRendererPtr->showImage();
 #endif
 
@@ -1379,7 +1384,7 @@ void MainWindow::on_actionClose_triggered()
 
     mCameraPtr.reset(nullptr);
     mProcessorPtr.reset(nullptr);
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     if(mRendererPtr){
         mRendererPtr->setImageSize({});
         mRendererPtr->update();

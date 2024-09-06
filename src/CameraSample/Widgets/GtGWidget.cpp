@@ -45,6 +45,9 @@
 GtGWidget::GtGWidget(QWidget* parent) :
     QWidget(parent), m_pixmap(new QPixmap())
 {
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_NoSystemBackground);
+
     mLastTime = QDateTime::currentMSecsSinceEpoch();
     mStartTime = mLastTime;
 
@@ -65,28 +68,6 @@ void GtGWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event)
     QPainter painter(this);
     painter.drawPixmap(0, 0, *m_pixmap);
-    // QPainter p;
-    // p.begin(this);
-    // p.setRenderHint(QPainter::Antialiasing);
-    // p.setBrush(QBrush(Qt::white));
-    // p.setPen(QPen(Qt::white, 1));
-    // QPainterPath textPath;
-    // qint64 lastTime = mAnimating ? QDateTime::currentMSecsSinceEpoch() : mLastTime;
-
-    // QString str;
-    // if(lastTime > mStartTime)
-    //     str = QString::number(lastTime - mStartTime);
-
-    // textPath.addText(0, 0, QFont("Arial"), str);
-    // const QRectF rcText = textPath.boundingRect();
-    // p.setWindow(rcText.left() - 5, rcText.top() - 5, rcText.width() + 10, rcText.height() + 10);
-    // p.drawPath(textPath);
-    // p.end();
-    // if(mAnimating)
-    // {
-    //     mLastTime = lastTime;
-    //     QTimer::singleShot(mTimerInterval, this, [this](){update();});
-    // }
 }
 
 void GtGWidget::setAnimating(bool enabled)
@@ -96,5 +77,25 @@ void GtGWidget::setAnimating(bool enabled)
     {
         mStartTime = QDateTime::currentMSecsSinceEpoch();
         update();
+    }
+}
+
+
+void GtGWidget::setImage(unsigned char * ptr, int w, int h, int step)
+{
+    if(w == step)
+    {
+        QImage img(ptr, w, h, step, QImage::Format_Grayscale8);
+        *m_pixmap = QPixmap::fromImage(img);
+    }
+    else if(step == 3 * w)
+    {
+        QImage img(ptr, w, h, step, QImage::Format_RGB888);
+        *m_pixmap = QPixmap::fromImage(img);
+    }
+    else
+    {
+        // 输出错误信息
+        qDebug() << "GtGWidget::setImage: unsupported format";
     }
 }

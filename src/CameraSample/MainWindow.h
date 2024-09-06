@@ -37,7 +37,7 @@
 #include "GPUCameraBase.h"
 #include <QSlider>
 
-#ifdef CUDA_CUDA
+#ifdef ENABLE_GL
     #include "GLImageViewer.h"
     class GLImageViewer;
 #endif
@@ -147,7 +147,7 @@ private:
     QScopedPointer<RawProcessor> mProcessorPtr;
     QScopedPointer<GPUCameraBase> mCameraPtr;
 
-#ifdef CUDA_CUDA
+#ifdef ENABLE_GL
     QScopedPointer<QWidget> mContainerPtr;
     QScopedPointer<GLImageViewer> mMediaViewer;
     QSharedPointer<GLRenderer> mRendererPtr;

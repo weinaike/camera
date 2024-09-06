@@ -36,6 +36,7 @@ set(SRC
     RawProcessor.h
     resource.h
     version.h
+    WeldData.h
     Resorces.qrc
     #gpu-camera-sample.rc
     resource.rc
@@ -72,9 +73,12 @@ set(SRC
     Widgets/DenoiseController.ui
     Widgets/GtGWidget.cpp
     Widgets/GtGWidget.h
+    Widgets/customlabel.cpp
+    Widgets/customlabel.h    
     Widgets/ImageResult.cpp
     Widgets/ImageResult.h
     Widgets/ImageResult.ui
+
 )
 if(USE_CUDA)
     set(SRC ${SRC}
@@ -143,7 +147,7 @@ endif()
 
 if(USE_CUDA)   
     target_link_libraries(CameraSample PRIVATE
-        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::OpenGL Qt5::Network
+        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::OpenGL Qt5::Network Qt5::Charts
         ${FFMPEG_LIB}
         ${JPEG_LIB}
         CUDA::cudart
@@ -158,7 +162,7 @@ else()
 #    )
 
     target_link_libraries(CameraSample PRIVATE
-        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network
+        Qt5::Core Qt5::Widgets Qt5::Gui Qt5::Network Qt5::Charts
         ${FastVideo_LIB}
         ${FFMPEG_LIB}
         ${JPEG_LIB}

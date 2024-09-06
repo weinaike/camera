@@ -30,6 +30,8 @@
 #include "MainWindow.h"
 #include "RawProcessor.h"
 #include <QFileInfo>
+#include <QMessageBox> 
+#include <regex>
 extern int loadPPM(const char *file, void** data, BaseAllocator *alloc, unsigned int &width, unsigned &wPitch, unsigned int &height, unsigned &bitsPerPixel, unsigned &channels);
 using CameraStatEnum = GPUCameraBase::cmrCameraStatistic  ;
 PGMCamera::PGMCamera(const QString &fileName,
@@ -45,7 +47,25 @@ PGMCamera::PGMCamera(const QString &fileName,
     qRegisterMetaType<GPUCameraBase::cmrCameraState>("GPUCameraBase::cmrCameraState");
 }
 
+struct ImageData {
+    int width;
+    int height;
+    int bitDepth;
+};
 
+
+ImageData parseFileName(const std::string& filename) {
+    std::regex re(R"((\d+)_(\d+)_(\d+)bit)");
+    std::smatch match;
+    ImageData imgData = {0, 0, 0};
+
+    if (std::regex_search(filename, match, re) && match.size() == 4) {
+        imgData.width = std::stoi(match[1]);
+        imgData.height = std::stoi(match[2]);
+        imgData.bitDepth = std::stoi(match[3]);
+    }
+    return imgData;
+}
 
 
 PGMCamera::~PGMCamera()
@@ -64,17 +84,30 @@ bool PGMCamera::open(int devID)
 {
     mDevID = devID;
 
-    QString fileExtension = QFileInfo(mFileName).suffix();
+    QString fileExtension = QFileInfo(mFileName).suffix();    
     isRawFile = (fileExtension.toLower() == "raw");
-    qDebug("isRawFile %d\n", isRawFile);
-
     if(isRawFile)
     {
-        qDebug("if(isRawFile), %p\n", mfile);
+        ImageData info =  parseFileName(mFileName.toStdString());
+        if(info.width == 0 || info.height == 0 || info.bitDepth == 0)
+        {
+            // QT 弹窗提示格式不满足，不是raw文件
+            QMessageBox::warning(nullptr, QStringLiteral("Error"), QStringLiteral("File format is not supported, please use the format like 640_512_12bit.raw"));
+            return false;
+        }
+        if(info.bitDepth != 8)
+        {
+            // QT 弹窗提示格式不满足，不是raw文件
+            QMessageBox::warning(nullptr, QStringLiteral("Error"), QStringLiteral("Only 8bit raw file is supported now"));
+            return false;
+        }
+        
         if(mfile != NULL)
         {
+            // 关闭之前打开的文件
+            qDebug("close prior file, %p\n", mfile);
             fclose(mfile);
-            mfile=nullptr;
+            mfile=nullptr;            
         }
 
         #ifdef _WIN32
@@ -101,18 +134,19 @@ bool PGMCamera::open(int devID)
 
         mState = cstClosed;
 
-        mManufacturer = QStringLiteral("Fastvideo");
+        mManufacturer = QStringLiteral("zjv");
         mModel = QStringLiteral("raw video camera simulator");
         mSerial = QStringLiteral("0000");
 
         MallocAllocator a;
 
+        int byte = (info.bitDepth + 8 - 1) / 8;
 
-        uint width = 640;
-        uint height = 512;
-        uint pitch = width * 2;
-        uint sampleSize = 12;
-        uint samples = 1000;
+        uint width = info.width;
+        uint height = info.height;
+        uint pitch = width * byte;
+        uint sampleSize = info.bitDepth;
+        // uint samples = 1000;
         uint frameSize  = pitch * height ;
         mFrameSize = frameSize;
         unsigned char* bits = (unsigned char* )a.allocate(frameSize);
@@ -156,7 +190,8 @@ bool PGMCamera::open(int devID)
         mInputImage.surfaceFmt = mSurfaceFormat;
         mInputImage.wPitch = pitch;
         mInputImage.bitsPerChannel = sampleSize;
-        printf("PGMCamera::open w[%d] h[%d] stride[%d] bitsPerChannel[%d] mSurfaceFormat[%d]\n", width, height, pitch, sampleSize, mSurfaceFormat);
+        printf("PGMCamera::open w[%d] h[%d] stride[%d] bitsPerChannel[%d] mSurfaceFormat[%d]\n", 
+            width, height, pitch, sampleSize, mSurfaceFormat);
 
         try
         {
@@ -178,86 +213,15 @@ bool PGMCamera::open(int devID)
             return false;
         }
 
-
         mState = cstStopped;
         emit stateChanged(cstStopped);
-
-        return true;
-    }
-
-
-
-    mState = cstClosed;
-
-    mManufacturer = QStringLiteral("Fastvideo");
-    mModel = QStringLiteral("PGM camera simulator");
-    mSerial = QStringLiteral("0000");
-
-    MallocAllocator a;
-    unsigned char* bits = nullptr;
-    uint width = 0;
-    uint height = 0;
-    uint pitch = 0;
-    uint sampleSize = 0;
-    uint samples = 0;
-    if(1 != loadPPM(mFileName.toStdString().c_str(),
-                    reinterpret_cast<void**>(&bits),
-                    &a,
-                    width, pitch, height,
-                    sampleSize, samples))
-        return false;
-
-    if(samples != 1)
-        return false;
-
-    mFPS = 60;
-
-    if(sampleSize == 8)
-    {
-        mImageFormat = cif8bpp;
-        mSurfaceFormat = FAST_I8;
-    }
-    else if(sampleSize == 12)
-    {
-        mImageFormat = cif12bpp;
-        mSurfaceFormat = FAST_I12;
     }
     else
     {
-        mImageFormat = cif16bpp;
-        mSurfaceFormat = FAST_I16;
+        // QT 弹窗提示格式不满足，不是raw文件
+        QMessageBox::warning(nullptr, QStringLiteral("Error"), QStringLiteral("File format is not supported"));
+        
     }
-
-    mWidth = width;
-    mHeight = height;
-    mWhite = (1 << sampleSize) - 1;
-    mBblack = 0;
-
-    mInputImage.w = width;
-    mInputImage.h = height;
-    mInputImage.surfaceFmt = mSurfaceFormat;
-    mInputImage.wPitch = pitch;
-    mInputImage.bitsPerChannel = sampleSize;
-    printf("PGMCamera::open w[%d] h[%d] stride[%d] bitsPerChannel[%d] mSurfaceFormat[%d]\n", width, height, pitch, sampleSize, mSurfaceFormat);
-
-    try
-    {
-        mInputImage.data.reset(static_cast<unsigned char*>(a.allocate(mInputImage.wPitch * mInputImage.h)));
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    memcpy(mInputImage.data.get(), bits, pitch * height);
-    unsigned short* ptr = (unsigned short* )bits;
-    a.deallocate(bits);
-
-    if(!mInputBuffer.allocate(mWidth, mHeight, mSurfaceFormat))
-        return false;
-
-    mState = cstStopped;
-    emit stateChanged(cstStopped);
     return true;
 }
 
@@ -306,7 +270,10 @@ void PGMCamera::startStreaming()
                 mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
                 mStatistics[CameraStatEnum::statCurrFrameID] = cnt;
                 mStatistics[CameraStatEnum::statVideoAllFrames] = mSamples;
-                // printf("read frame idx %d\n",cnt);
+                if (cnt % 100 == 0)
+                {
+                    printf("read frame idx %d\n",cnt);
+                }
                 // enum class cmrCameraStatistic {
                 //     statFramesTotal = 0, /// Total number of frames acquired
                 //     statFramesDropped ,  /// Number of dropped frames
@@ -370,8 +337,12 @@ bool PGMCamera::getParameter(cmrCameraParameter param, float& val)
 
 bool PGMCamera::setParameter(cmrCameraParameter param, float val)
 {
-    Q_UNUSED(param)
-    Q_UNUSED(val)
+    if(param  == prmFrameRate)
+    {
+        QMutexLocker l(&mLock);
+        mFPS = val;
+        return true;
+    }    
     return false;
 }
 

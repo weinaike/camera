@@ -81,7 +81,7 @@ void CUDAProcessorBase::freeFilters()
 
     if(hGLBuffer)
     {
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
         cudaFree( hGLBuffer );
         hGLBuffer  = nullptr;
 #else
@@ -228,7 +228,7 @@ fastStatus_t CUDAProcessorBase::Init(CUDAProcessorOptions &options)
     //bufferPtr = &srcBuffer;
 
     //Open GL
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     unsigned maxPitch = 3 * ( ( ( options.MaxWidth + FAST_ALIGNMENT - 1 ) / FAST_ALIGNMENT ) * FAST_ALIGNMENT );
     unsigned bufferSize = maxPitch * options.MaxHeight * sizeof(unsigned char);
     printf("CUDAProcessorBase hGLBuffer:bufferSize %d, w %d, h %d\n", bufferSize, maxWidth, maxHeight);
@@ -346,88 +346,60 @@ int CUDAProcessorBase::fastCopyToGPU(GPUImage_t *image, void *dstptr, fastSurfac
 
 int CUDAProcessorBase::transformToGLBuffer(void *srcptr, void* Buffer, int  imgWidth, int imgHeight, fastSurfaceFormat_t SurfaceFmt)
 {   
-    if (FAST_BGRX8 == SurfaceFmt)
-    {
-
-    }
-    else if (FAST_RGB8 == SurfaceFmt)
-    {
+    if (FAST_RGB8 == SurfaceFmt) {
         // Transformation logic for converting from CUDA FAST_RGB8 to OpenGL RGB8
         // copy direct
-    #ifdef USE_CUDA
-        cudaMemcpy(srcptr, Buffer, imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
-    #else
-        memcpy(Buffer, srcptr, imgWidth * imgHeight * 3);
-    #endif
+        #ifdef ENABLE_GL
+            cudaMemcpy(Buffer, srcptr, imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToDevice);
+        #elif defined(USE_CUDA)
+            cudaMemcpy(Buffer, srcptr, imgWidth * imgHeight * sizeof(unsigned char) * 3, cudaMemcpyDeviceToHost);
+        #else
+            memcpy(Buffer, srcptr, imgWidth * imgHeight * 3);
+        #endif
     }
-    else if (FAST_I8 == SurfaceFmt)
-    {
+    else if (FAST_I8 == SurfaceFmt) {
         // Transformation logic for converting from CUDA FAST_I8 to OpenGL RGB8
+        #ifdef ENABLE_GL
+            // 需要将8bit的灰度图转换为RGB8格式
+            convert8BitGrayToRgb(srcptr, Buffer, imgWidth, imgHeight);     
+        #elif defined(USE_CUDA)
+            // ImageResult显示， 8bit转8bit ，灰度显示
+            cudaMemcpy(Buffer, srcptr, imgWidth * imgHeight, cudaMemcpyDeviceToHost);                  
+        #else
+            // ImageResult显示， 8bit转8bit ，灰度显示
+            memcpy(Buffer, srcptr, imgWidth * imgHeight);
+        #endif
     }
-    else if (FAST_BGR8 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL BGR8
-
-    }
-    else if (FAST_I16 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-        // ...
-    }
-    else if (FAST_I12 == SurfaceFmt)
-    {
+    else if (FAST_I12 == SurfaceFmt) {
         // Transformation logic for converting from CUDA FAST_I12 to OpenGL RGB8
         // Modify this code based on the actual formats of the buffers
-    #ifdef USE_CUDA
-        convert12BitGrayTo8BitRgb(srcptr, Buffer, imgWidth, imgHeight);
-    #else
-        unsigned short* src = (unsigned short*) srcptr;
-        unsigned char * dst = (unsigned char *) Buffer;
-        for(int i = 0; i < imgWidth * imgHeight; i++) 
-        {
-            dst[i] = src[i] >> 4;
-        }
-    #endif
-        
+        #ifdef ENABLE_GL // CUDA->CUDA
+            convert12BitGrayTo8BitRgb(srcptr, Buffer, imgWidth, imgHeight);
+        #elif defined(USE_CUDA)
+            // ImageResult显示， 12bit转8bit ，灰度显示 cuda->cpu
+            unsigned short* src = (unsigned short*) srcptr;
+            unsigned short* src_host = (unsigned short*) malloc(imgWidth * imgHeight * sizeof(unsigned short));
+            cudaMemcpy(src_host, src, imgWidth * imgHeight * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+
+            unsigned char * dst = (unsigned char *) Buffer;
+            for(int i = 0; i < imgWidth * imgHeight; i++) 
+            {
+                dst[i] = src_host[i] >> 4;
+            }
+            free(src_host);    
+        #else   // CPU->CPU
+            // ImageResult显示， 12bit转8bit ，灰度显示
+            unsigned short* src = (unsigned short*) srcptr;
+            unsigned char * dst = (unsigned char *) Buffer;
+            for(int i = 0; i < imgWidth * imgHeight; i++) 
+            {
+                dst[i] = src[i] >> 4;
+            }
+        #endif        
     }
-    else if (FAST_I14 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-        // ...
-    }
-    else if (FAST_RGB12 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-    }
-    else if (FAST_RGB16 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-        // ...
-    }
-    else if (FAST_YCbCr8 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-        // ...
-    }
-    else if (FAST_CrCbY8 == SurfaceFmt)
-    {
-        // Transformation logic for converting from CUDA RGBA to OpenGL RGB8
-        // Modify this code based on the actual formats of the buffers
-        // ...
-    }
-    else
-    {
-        // Unsupported format
-        // Handle the error or return an appropriate status code
+    else {
         return -1;
     }
-
-    // Return any necessary status or error code
     return 0;
 }
 
@@ -469,7 +441,7 @@ fastStatus_t CUDAProcessorBase::Transform(GPUImage_t *image, CUDAProcessorOption
     QElapsedTimer cpuTimer;
     cpuTimer.start();
 
-#ifdef USE_CUDA
+#ifdef ENABLE_GL
     //copy image to GPU
     fastCopyToGPU(image, srcBuffer, opts.SurfaceFmt, imgWidth, imgHeight, opts.Packed);
 

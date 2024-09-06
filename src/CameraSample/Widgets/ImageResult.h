@@ -5,6 +5,11 @@
 #include "GPUCameraBase.h"
 #include "CUDAProcessorBase.h"
 #include <QStandardItemModel>
+#include "customlabel.h"
+#include "WeldData.h"
+
+
+
 namespace Ui {
 class ImageResult;
 }
@@ -34,6 +39,7 @@ public slots:
     void set_slider_value(int value);
     // 播放过程中，实时更新
     void UpdateSlider();
+    void get_result(WeldResult result);
 
 protected:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
@@ -47,6 +53,7 @@ private:
     QPixmap *mPixmap;
     bool mStream = false;
     QStandardItemModel *mModel = nullptr;
+    std::vector<WeldResult> mResults;
 };
 
 #endif // IMAGERESULT_H
