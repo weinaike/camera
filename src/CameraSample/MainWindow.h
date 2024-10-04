@@ -36,12 +36,13 @@
 //#include "FrameBuffer.h"
 #include "GPUCameraBase.h"
 #include <QSlider>
-
+#include "Widgets/CameraSetupWidget.h"
 #ifdef ENABLE_GL
     #include "GLImageViewer.h"
     class GLImageViewer;
 #endif
 class RawProcessor;
+
 
 namespace Ui {
 class MainWindow;
@@ -65,6 +66,8 @@ protected:
     void customEvent(QEvent* event) Q_DECL_OVERRIDE;
     void closeEvent(QCloseEvent* event) Q_DECL_OVERRIDE;
 private slots:
+    // update mode
+    void onModeChanged(INPUT_MODE mode);
     //Zoom
     void onZoomChanged(qreal zoom);
     void on_chkZoomFit_toggled(bool checked);
@@ -132,17 +135,22 @@ private slots:
     void on_btnGetGrayFile_clicked();
     void on_chkSAM_toggled(bool checked);
 
-    void on_actionShowImage_triggered(bool checked);
+    // void on_actionShowImage_triggered(bool checked);
+    void on_actionInfer_toggled(bool checked);
 
 
     void on_actionClose_triggered();
     virtual QMenu *createPopupMenu() override;
+
+    void showStatus(const QString& status);
 
 private:
     Ui::MainWindow *ui;
 
     QLabel* mStatusLabel;
     QLabel* mFpsLabel;
+    QLabel* mMessageLabel;
+
 
     QScopedPointer<RawProcessor> mProcessorPtr;
     QScopedPointer<GPUCameraBase> mCameraPtr;
@@ -155,6 +163,8 @@ private:
 
     CUDAProcessorOptions mOptions;
     QVector<unsigned short> mGammaCurve;
+
+    INPUT_MODE mInputMode = MODE_VIDEO;
 
     QString mCurrentDir;
     QLabel* mResultLabel = nullptr;

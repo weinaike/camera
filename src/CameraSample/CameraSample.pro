@@ -1,4 +1,4 @@
-QT += core gui widgets network opengl
+QT += core gui widgets network opengl charts
 
 include(../common_defs.pri)
 include(../common_funcs.pri)
@@ -13,26 +13,21 @@ unix:  FASTVIDEO_EXTRA_DLLS += $$PWD/GPUCameraSample.sh
 CONFIG += console
 CONFIG += c++11
 
-#INCLUDEPATH += ./CUDASupport
-#INCLUDEPATH += ./Camera
-#INCLUDEPATH += ./Widgets
 INCLUDEPATH += $$PWD
 INCLUDEPATH += $$PWD/CUDASupport
 INCLUDEPATH += $$PWD/Widgets
 INCLUDEPATH += $$PWD/Camera
 INCLUDEPATH += $$PWD/RtspServer
+#INCLUDEPATH += "C:\Program Files\Lucid Vision Labs\Arena SDK\include\Arena"
+#INCLUDEPATH += "C:\Program Files\Lucid Vision Labs\Arena SDK\GenICam\library\CPP\include"
 
 SOURCES += main.cpp\
     Camera/BaslerCamera.cpp \
     MainWindow.cpp \
     Globals.cpp \
     AppSettings.cpp \
-    #FFCReader.cpp \
-    #FPNReader.cpp \
     Widgets/ImageResult.cpp \
     ppm.cpp \
-    #helper_jpeg_load.cpp \
-    #helper_jpeg_store.cpp \
     RawProcessor.cpp \
     AsyncFileWriter.cpp \
     MJPEGEncoder.cpp \
@@ -46,21 +41,16 @@ SOURCES += main.cpp\
     Widgets/GtGWidget.cpp \
     Widgets/CameraSetupWidget.cpp \
     Widgets/camerastatistics.cpp \
-    #RtspServer/CTPTransport.cpp \
     RtspServer/JpegEncoder.cpp \
-    #RtspServer/RTSPStreamerServer.cpp \
-    #RtspServer/TcpClient.cpp \
-    #RtspServer/vutils.cpp
+    Widgets/customlabel.cpp
+
 
 HEADERS  += MainWindow.h \
     Camera/BaslerCamera.h \
     Globals.h \
     AppSettings.h \
-    #FFCReader.h \
-    #FPNReader.h \
     Widgets/ImageResult.h \
     ppm.h \
-    #helper_jpeg.hpp \
     RawProcessor.h \
     AsyncFileWriter.h \
     AsyncQueue.h \
@@ -79,13 +69,9 @@ HEADERS  += MainWindow.h \
     Widgets/GtGWidget.h \
     Widgets/CameraSetupWidget.h \
     RtspServer/common_utils.h \
-    #RtspServer/CTPTransport.h \
     RtspServer/JpegEncoder.h \
-    #RtspServer/RTSPStreamerServer.h \
-    #RtspServer/TcpClient.h \
-    #RtspServer/vutils.h \
-#    $$OTHER_LIB_PATH/FastvideoSDK/common/SurfaceTraits.hpp \
-    version.h
+    version.h \
+    Widgets/customlabel.h
 
 win32{
     SOURCES +=  $$PWD/../../OtherLibs/FastvideoSDK/common/BaseAllocator.cpp \
@@ -111,7 +97,7 @@ win32{
 
 
 
-contains(DEFINES, USE_CUDA ){
+contains(DEFINES, ENABLE_GL){
    SOURCES += Widgets/GLImageViewer.cpp
    HEADERS += Widgets/GLImageViewer.h
 }
@@ -199,6 +185,8 @@ win32:copyPluginsToDestdir(imageformats)
 
 copyQtDllsToDestdir($$QT_DLLS)
 copyToDestdir($$FASTVIDEO_EXTRA_DLLS)
+copyToDestdir($$TRT_DLL)
+
 
 unix {
 
@@ -226,3 +214,4 @@ RESOURCES += \
     Resorces.qrc
 
 DISTFILES +=
+

@@ -34,7 +34,17 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="ImageResult" name="result" native="true"/>
+     <widget class="ImageResult" name="result" native="true">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -44,7 +54,7 @@
      <x>0</x>
      <y>0</y>
      <width>1400</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -59,14 +69,7 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuTools">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <addaction name="actionWB_picker"/>
-   </widget>
    <addaction name="menuCamera"/>
-   <addaction name="menuTools"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="windowTitle">
@@ -85,7 +88,7 @@
    <addaction name="actionRecord"/>
    <addaction name="actionWB_picker"/>
    <addaction name="separator"/>
-   <addaction name="actionShowImage"/>
+   <addaction name="actionInfer"/>
    <addaction name="separator"/>
    <addaction name="actionExit"/>
    <addaction name="separator"/>
@@ -127,6 +130,25 @@
      <property name="spacing">
       <number>6</number>
      </property>
+     <item row="4" column="0" colspan="2">
+      <widget class="QLabel" name="label_13">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>120</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Flat field file</string>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="0" colspan="2">
       <widget class="QLabel" name="label_39">
        <property name="minimumSize">
@@ -140,10 +162,31 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="0" colspan="3">
+      <widget class="QLineEdit" name="txtFPNFileName">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QToolButton" name="btnGetFPNFile">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
      <item row="5" column="0" colspan="3">
       <widget class="QLineEdit" name="txtFlatFieldFile">
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="4">
+      <widget class="CameraSetupWidget" name="cameraController" native="true">
+       <property name="enabled">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -220,44 +263,8 @@ QComboBox:editable {
        </property>
       </widget>
      </item>
-     <item row="3" column="3">
-      <widget class="QToolButton" name="btnGetFPNFile">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0" colspan="2">
-      <widget class="QLabel" name="label_13">
-       <property name="minimumSize">
-        <size>
-         <width>120</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>120</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Flat field file</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0" colspan="4">
-      <widget class="CameraSetupWidget" name="cameraController" native="true"/>
-     </item>
-     <item row="3" column="0" colspan="3">
-      <widget class="QLineEdit" name="txtFPNFileName">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <spacer name="verticalSpacer_3">
+     <item row="8" column="0">
+      <spacer name="verticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
@@ -1265,6 +1272,9 @@ QSlider::handle:horizontal {
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resorces.qrc">
      <normaloff>:/res/WBPicker.svg</normaloff>:/res/WBPicker.svg</iconset>
@@ -1275,8 +1285,20 @@ QSlider::handle:horizontal {
    <property name="toolTip">
     <string>Pick WB from gray point</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionOpenBayerPGM">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resorces.qrc">
      <normaloff>:/res/image.svg</normaloff>:/res/image.svg</iconset>
@@ -1297,22 +1319,25 @@ QSlider::handle:horizontal {
     <string>Open Raw Video</string>
    </property>
   </action>
-  <action name="actionShowImage">
+  <action name="actionInfer">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="Resorces.qrc">
-     <normaloff>:/res/PicturesPlace.svg</normaloff>:/res/PicturesPlace.svg</iconset>
+     <normaloff>:/res/net.svg</normaloff>:/res/net.svg</iconset>
    </property>
    <property name="text">
-    <string>Show Image</string>
+    <string>Infer</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show pipeline result in view permanently. When using rtsp encoding, disable it to conserve GPU resources on embedded devices.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>Infer</string>
    </property>
   </action>
   <action name="actionClose">
@@ -1322,6 +1347,11 @@ QSlider::handle:horizontal {
    </property>
    <property name="text">
     <string>Close</string>
+   </property>
+  </action>
+  <action name="actionInfer_2">
+   <property name="text">
+    <string>actionInfer</string>
    </property>
   </action>
   <zorder>recordingWidget</zorder>

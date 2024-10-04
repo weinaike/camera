@@ -52,6 +52,7 @@ public:
     PGMCamera& operator=(const PGMCamera&) = delete;
     // 槽函数
     void setValue(int value);
+    QString getFileName() const { return mFileName; }
 
 private:
     void startStreaming();

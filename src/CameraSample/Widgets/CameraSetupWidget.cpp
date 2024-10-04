@@ -49,14 +49,29 @@ void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
     {
         ui->spnFrameRate->setEnabled(false);
         ui->spnExposureTime->setEnabled(false);
+        ui->radioButton_ext->setEnabled(false);
+        ui->radioButton_int->setEnabled(false);
     }
     else if(mCameraPtr->state() == GPUCameraBase::cstClosed)
     {
         ui->spnFrameRate->setEnabled(false);
         ui->spnExposureTime->setEnabled(false);
+        ui->radioButton_ext->setEnabled(false);
+        ui->radioButton_int->setEnabled(false);
     }
     else
     {
+        if(cameraPtr->devID() < 0)
+        {
+            ui->radioButton_ext->setEnabled(false);
+            ui->radioButton_int->setEnabled(false);
+        }
+        else
+        {
+            ui->radioButton_ext->setEnabled(true);
+            ui->radioButton_int->setEnabled(true);
+            ui->radioButton_int->setChecked(true);
+        }
         ui->spnFrameRate->setEnabled(true);
         ui->spnExposureTime->setEnabled(true);
 
@@ -64,28 +79,35 @@ void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
                 this, SLOT(onCameraStateChanged(GPUCameraBase::cmrCameraState)));
 
         GPUCameraBase::cmrParameterInfo info(GPUCameraBase::prmExposureTime);
-        float val = 0;
+        
 
         mCameraPtr->getParameterInfo(info);
-        QSignalBlocker b(ui->spnExposureTime);
-        ui->spnExposureTime->setMaximum(info.max);
-        ui->spnExposureTime->setMinimum(info.min);
-        ui->spnExposureTime->setSingleStep(info.increment);
-        if(mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
         {
-            ui->spnExposureTime->setValue((int)val);
+            QSignalBlocker b(ui->spnExposureTime);
+            // ui->spnExposureTime->setMaximum(info.max);
+            // ui->spnExposureTime->setMinimum(info.min);
+            // ui->spnExposureTime->setSingleStep(info.increment);
+            float val = 0;
+            if(mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
+            {
+                ui->spnExposureTime->setValue((int)val);
+            }
         }
 
-        QSignalBlocker b1(ui->spnFrameRate);
-        info.param = GPUCameraBase::prmFrameRate;
-        mCameraPtr->getParameterInfo(info);
-        ui->spnFrameRate->setMaximum(info.max);
-//        ui->spnFrameRate->setMinimum(info.min);
-        ui->spnFrameRate->setSingleStep(info.increment);
-        if(mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
         {
-            ui->spnFrameRate->setValue((double)val);
+            QSignalBlocker b1(ui->spnFrameRate);
+            // info.param = GPUCameraBase::prmFrameRate;
+            // mCameraPtr->getParameterInfo(info);
+            // ui->spnFrameRate->setMaximum(info.max);
+            // ui->spnFrameRate->setMinimum(info.min);
+            // ui->spnFrameRate->setSingleStep(info.increment);
+            float val = 0;
+            if(mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
+            {
+                ui->spnFrameRate->setValue((double)val);
+            }
         }
+
     }
 }
 
@@ -93,6 +115,12 @@ void CameraSetupWidget::setExposureCamera(float value)
 {
     ui->spnExposureTime->setValue(value);
 }
+
+void CameraSetupWidget::setFpsCamera(float value)
+{
+    ui->spnFrameRate->setValue(value);
+}
+
 void CameraSetupWidget::on_spnFrameRate_valueChanged(double arg1)
 {
     if(mCameraPtr == nullptr)
@@ -135,11 +163,15 @@ void CameraSetupWidget::onCameraStateChanged(GPUCameraBase::cmrCameraState newSt
     {
         ui->spnFrameRate->setEnabled(false);
         ui->spnExposureTime->setEnabled(false);
+        ui->radioButton_ext->setEnabled(false);
+        ui->radioButton_int->setEnabled(false);
     }
     else
     {
         ui->spnFrameRate->setEnabled(true);
         ui->spnExposureTime->setEnabled(true);
+        ui->radioButton_ext->setEnabled(true);
+        ui->radioButton_int->setEnabled(true);
     }
 //    else if(newState == CameraBase::cstStopped)
 //    {
@@ -150,3 +182,23 @@ void CameraSetupWidget::onCameraStateChanged(GPUCameraBase::cmrCameraState newSt
 
 //    }
 }
+
+void CameraSetupWidget::on_radioButton_int_clicked(bool checked)
+{
+    if(mCameraPtr == nullptr)
+        return;
+    if(mCameraPtr->devID() < 0)
+        return;
+    emit modeChanged(INPUT_MODE::MODE_CAMERA_INTERNAL_TRIGGER);
+}
+
+
+void CameraSetupWidget::on_radioButton_ext_clicked(bool checked)
+{
+    if(mCameraPtr == nullptr)
+        return;
+    if(mCameraPtr->devID() < 0)
+        return;
+    emit modeChanged(INPUT_MODE::MODE_CAMERA_EXTERNAL_TRIGGER);
+}
+

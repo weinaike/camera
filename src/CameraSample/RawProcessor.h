@@ -70,6 +70,8 @@ public:
     QMap<QString, float> getStats();
     void startWriting();
     void stopWriting();
+    void startInfer();
+    void stopInfer();
     void setOutputPath(const QString& path){mOutputPath = path;}
     void setFilePrefix(const QString& prefix){mFilePrefix = prefix;}
 
@@ -88,6 +90,7 @@ public slots:
 private:
     bool                 mWorking = false;
     bool                 mWriting = false;
+    bool                 mInfer = false;
     CUDAProcessorOptions mOptions;
     CUDAProcessorOptions::VideoCodec mCodec = CUDAProcessorOptions::vcNone;
 

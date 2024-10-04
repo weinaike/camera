@@ -66,7 +66,6 @@ typedef struct                       /**** BMP file info structure ****/
 } BITMAPINFO_;
 
 
-
 class CUDAProcessorOptions
 {
 public:
@@ -185,6 +184,7 @@ public:
         Angle = other.Angle;
 
         ShowPicture = other.ShowPicture;
+        Infer = other.Infer;
 
         EnableDenoise = other.EnableDenoise;
         memcpy(&DenoiseParams, &other.DenoiseParams, sizeof(fastDenoiseParameters_t));
@@ -210,6 +210,8 @@ public:
     unsigned DeviceId;
 
     bool ShowPicture;
+
+    bool Infer;
 
     bool Packed;
 
@@ -256,7 +258,6 @@ public:
     fastDenoiseStaticParameters_t DenoiseStaticParams{};
 
     bool EnableBPC;
-
 };
 
 #endif // CUDAPROCESSOROPTIONS_H

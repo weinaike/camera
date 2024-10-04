@@ -211,12 +211,34 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->denoiseCtlr, SIGNAL(cbThresholdChanged(float)), this, SLOT(onCbThresholdChanged(float)));
     connect(ui->denoiseCtlr, SIGNAL(shrinkageChanged(int)), this, SLOT(onShrinkageChanged(int)));
     connect(ui->denoiseCtlr, SIGNAL(paramsChanged()), this, SLOT(onDenoiseParamsChanged()));
-
+    connect(ui->result, SIGNAL(callParentOpenPMG(bool)) , this, SLOT(openPGMFile(bool)));
+    connect(ui->result, SIGNAL(sendStatus(QString)) , this, SLOT(showStatus(QString)));
+    connect(ui->cameraController, SIGNAL(modeChanged(INPUT_MODE)) , this, SLOT(onModeChanged(INPUT_MODE)));
     mStatusLabel = new QLabel(this);
     mFpsLabel = new QLabel(this);
+    mMessageLabel = new QLabel(this);
 
-    ui->statusBar->addWidget(mStatusLabel);
-    ui->statusBar->addWidget(mFpsLabel);
+
+    // 创建水平布局
+    QHBoxLayout *statusLayout = new QHBoxLayout();
+
+    // 将 mMessageLabel 添加到布局的左侧
+    statusLayout->addWidget(mMessageLabel);
+
+    statusLayout->setStretch(0, 1);
+
+    // 将 mStatusLabel 和 mFpsLabel 添加到布局的右侧
+    statusLayout->addWidget(mStatusLabel);
+    statusLayout->addWidget(mFpsLabel);
+
+    statusLayout->setStretch(1, 0);
+    statusLayout->setStretch(2, 0);
+
+    // 创建一个 QWidget 来包含布局
+    QWidget *statusWidget = new QWidget();
+    statusWidget->setLayout(statusLayout);
+
+    ui->statusBar->addWidget(statusWidget);
 
     auto * openButton=
                 dynamic_cast<QToolButton*>(ui->mainToolBar->widgetForAction(ui->actionOpenBayerPGM));
@@ -232,8 +254,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(menuPtr != nullptr)
     {
         menuPtr->setTitle(QStringLiteral("View"));
-        ui->menuBar->insertMenu(ui->actionWB_picker, menuPtr);
-        
+        ui->menuBar->insertMenu(ui->actionWB_picker, menuPtr);        
     }
 
 #if 0
@@ -314,6 +335,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::showStatus(const QString& status)
+{
+    mMessageLabel->setText(status);
+}
 
 QMenu *MainWindow::createPopupMenu()
 {
@@ -388,7 +413,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
 
-    ui->result->stop();
+    ui->result->clear();
 
     if(mProcessorPtr)
         mProcessorPtr->stop();
@@ -417,7 +442,15 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 
         return;
     }
-
+    if (devID < 0)
+    {
+        showStatus("Video Ready");
+    }
+    else
+    {
+        showStatus("Camera Ready");
+    }
+    
     connect(mCameraPtr.data(),
             SIGNAL(stateChanged(GPUCameraBase::cmrCameraState)),
             this,
@@ -429,8 +462,12 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 #else
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data()));
 #endif
+    ui->result->setCamera(mCameraPtr.data());
+    ui->result->setProc(mProcessorPtr->getCUDAProcessor());
     connect(mProcessorPtr.data(), SIGNAL(finished()), this, SLOT(onGPUFinished()));
     connect(mProcessorPtr.data(), SIGNAL(error()), this, SLOT(onGPUError()));
+    connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
+    connect(mProcessorPtr.data(), &RawProcessor::send_result, ui->result, &ImageResult::get_result);
 
     mCameraPtr->setProcessor(mProcessorPtr.data());
     {
@@ -456,29 +493,24 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
             arg(mOptions.Width).
             arg(mOptions.Height).
             arg(bpp).
-            arg(mCameraPtr->isPacked() ? QStringLiteral(" packed") : QString());
+            arg(mCameraPtr->isPacked() ? QStringLiteral(" packed ") : QString());
 
-    mStatusLabel->setText(msg);
+    // mStatusLabel->setText(msg);
 
 #ifdef ENABLE_GL
     mRendererPtr->setImageSize(QSize(mOptions.Width, mOptions.Height));
     on_chkZoomFit_toggled(ui->chkZoomFit->isChecked());
 #endif
-    ui->actionPlay->setChecked(true);
 
     ui->cameraController->setCamera(mCameraPtr.data());
-
     ui->cameraStatistics->setCamera(mCameraPtr.data());
+    mCameraPtr->stop();
+    // ui->actionPlay->setChecked(true);
+    // QTimer::singleShot(0, this, [this](){
+    //     mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
+    //     ui->cameraController->setExposureCamera(30000);
+    // });
 
-    ui->result->setCamera(mCameraPtr.data());
-    ui->result->setProc(mProcessorPtr->getCUDAProcessor());
-//    QTimer::singleShot(1000, this, [this](){
-//        mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
-//    ui->cameraController->setExposureCamera(30000);
-//    });
-
-    connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
-    connect(mProcessorPtr.data(), &RawProcessor::send_result, ui->result, &ImageResult::get_result);
 }
 
 void MainWindow::openCamera(int devID)
@@ -538,11 +570,11 @@ void MainWindow::openCameraObj(GPUCameraBase *camera)
 
 void MainWindow::openPGMFile(bool isBayer)
 {
-    // QString fileName = QFileDialog::getOpenFileName(this,
-    //                                                 QStringLiteral("Select raw file"),
-    //                                                 mCurrentDir,
-    //                                                 QStringLiteral("Video (*.raw)"));
-    QString fileName = "/home/wnk/code/camera_sample/Img/video_640_512_8bit.raw";
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    QStringLiteral("Select raw file"),
+                                                    mCurrentDir,
+                                                    QStringLiteral("Video (*.raw)"));
+    // QString fileName = "/home/wnk/code/camera_sample/Img/video_640_512_8bit.raw";
     if(fileName.isEmpty())
         return;
     printf("fileName:%s\n", fileName.toStdString().c_str());
@@ -1259,29 +1291,60 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
             QSignalBlocker b(ui->actionPlay);
             ui->actionPlay->setChecked(false);
         }
+
+        {
+            QSignalBlocker b(ui->actionInfer);
+            ui->actionInfer->setChecked(false);
+        }
+
         ui->actionPlay->setEnabled(false);
         ui->actionRecord->setEnabled(false);
+        ui->actionInfer->setEnabled(false);
         ui->result->setStreaming(false);
-
     }
     else if(newState == GPUCameraBase::cstStopped)
-    {
-        ui->actionPlay->setEnabled(true);
+    {        
         {
             QSignalBlocker b(ui->actionPlay);
             ui->actionPlay->setChecked(false);
         }
-        ui->actionRecord->setEnabled(false);
+
+        if(mInputMode == MODE_VIDEO){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(true);
+        }else if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(false);
+        }
+        else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(false);
+        }
         ui->result->setStreaming(false);
     }
     else if(newState == GPUCameraBase::cstStreaming)
-    {
-        ui->actionPlay->setEnabled(true);
+    {        
         {
             QSignalBlocker b(ui->actionPlay);
             ui->actionPlay->setChecked(true);
         }
-        ui->actionRecord->setEnabled(true);
+        if(mInputMode == MODE_VIDEO){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(true);
+            ui->actionInfer->setEnabled(true);
+        }else if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(true);
+        }
+        else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(false);
+        }
         ui->result->setStreaming(true);
     }
 }
@@ -1307,19 +1370,56 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
 #ifdef ENABLE_GL
         mRendererPtr->showImage();
 #endif
-
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            // nothing to do
+        }else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            on_actionRecord_toggled(true);
+            on_actionInfer_toggled(true);
+        }else if(mInputMode == MODE_VIDEO){           
+            // nothing to do
+        }
         mCameraPtr->start();
         mProcessorPtr->start();
-        ui->result->start();
-
     }
     else
     {
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            // nothing to do
+        }else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            on_actionRecord_toggled(false);
+            on_actionInfer_toggled(false);
+        }else if(mInputMode == MODE_VIDEO){           
+            // nothing to do
+        }
+
         mCameraPtr->stop();
-        ui->result->stop();
+        mProcessorPtr->stop();
     }
 }
 
+
+void MainWindow::on_actionInfer_toggled(bool checked)
+{
+    if(!mProcessorPtr)
+    {
+        QMessageBox::critical(this, QCoreApplication::applicationName(),
+                              QObject::tr("CUDA processor is not initialized."));
+        ui->actionInfer->setChecked(false);
+        return;
+    }
+    if(checked)
+    {
+        mOptions.Infer = true;
+        mProcessorPtr->updateOptions(mOptions);
+        mProcessorPtr->startInfer();
+    }
+    else
+    {
+        mOptions.Infer = false;
+        mProcessorPtr->updateOptions(mOptions);
+        mProcessorPtr->stopInfer();
+    }
+}
 
 void MainWindow::onNewWBFromPoint(const QPoint& pt)
 {
@@ -1359,36 +1459,80 @@ void setBitrate(QComboBox* cb, int bitrate)
 	}
 }
 
-void MainWindow::on_actionShowImage_triggered(bool checked)
-{
-    if(!mCameraPtr || !mProcessorPtr)
-        return;
+// void MainWindow::on_actionShowImage_triggered(bool checked)
+// {
+//     if(!mCameraPtr || !mProcessorPtr)
+//         return;
 
-    updateOptions(mOptions);
-    mOptions.ShowPicture = checked;
-    mProcessorPtr->updateOptions(mOptions);
-}
+//     updateOptions(mOptions);
+//     mOptions.ShowPicture = checked;
+//     mProcessorPtr->updateOptions(mOptions);
+// }
 
 
 void MainWindow::on_actionClose_triggered()
 {
     if(mCameraPtr)
+    {
         mCameraPtr->stop();
+        showStatus(tr("Camera or video close."));
+        QThread::msleep(100);
+        mCameraPtr->setProcessor(nullptr);
+
+    }
 
     if(mProcessorPtr){
         mProcessorPtr->stop();
+        qDebug()<<" mProcessorPtr->stop();  ";
+        QThread::msleep(1000);
     }
+
+
     ui->cameraStatistics->setCamera(nullptr);
     ui->cameraController->setCamera(nullptr);
+    qDebug()<<" ui->result release ";
+    ui->result->setProc(nullptr);
     ui->result->setCamera(nullptr);
+    ui->result->clear();
 
-    mCameraPtr.reset(nullptr);
+    if(mCameraPtr)
+    {
+        mCameraPtr->close();
+    }
+
+
+    qDebug()<<" mCameraPtr.reset(nullptr); ";
     mProcessorPtr.reset(nullptr);
+
+
+
 #ifdef ENABLE_GL
     if(mRendererPtr){
         mRendererPtr->setImageSize({});
         mRendererPtr->update();
     }
 #endif
+
+    QThread::msleep(50);
+    // 更新状态
+    {
+        QSignalBlocker b(ui->actionPlay);
+        ui->actionPlay->setChecked(false);
+    }
+    {
+        QSignalBlocker b(ui->actionInfer);
+        ui->actionInfer->setChecked(false);
+    }
+
+    ui->actionPlay->setEnabled(false);
+    ui->actionInfer->setEnabled(false);
+
 }
 
+void MainWindow::onModeChanged(INPUT_MODE mode)
+{
+    if (mCameraPtr == nullptr)
+        return;
+    if(mCameraPtr->devID() >= 0)
+        mInputMode = mode;
+}

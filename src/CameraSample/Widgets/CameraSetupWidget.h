@@ -32,6 +32,14 @@
 #include <QWidget>
 #include "GPUCameraBase.h"
 
+enum INPUT_MODE
+{
+    MODE_VIDEO = 0,                 // Video mode    
+    MODE_CAMERA_EXTERNAL_TRIGGER,   // Camera is triggered by external signal
+    MODE_CAMERA_INTERNAL_TRIGGER,   // Camera is triggered by internal signal
+};
+
+
 namespace Ui {
 class CameraSetupWidget;
 }
@@ -47,11 +55,19 @@ public:
     void setCamera(GPUCameraBase* cameraPtr);
 
     void setExposureCamera(float value);
+    void setFpsCamera(float value);
+
+signals:
+    void modeChanged(INPUT_MODE value);
 
 private slots:
     void on_spnFrameRate_valueChanged(double arg1);
     void on_spnExposureTime_valueChanged(int arg1);
     void onCameraStateChanged(GPUCameraBase::cmrCameraState newState);
+    void on_radioButton_int_clicked(bool checked);
+
+    void on_radioButton_ext_clicked(bool checked);
+
 private:
     Ui::CameraSetupWidget *ui;
     GPUCameraBase* mCameraPtr = nullptr;

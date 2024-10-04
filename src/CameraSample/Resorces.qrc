@@ -82,5 +82,6 @@
         <file>res/camera.svg</file>
         <file>quadVertex.vert</file>
         <file>quadFragment.frag</file>
+        <file>res/net.svg</file>
     </qresource>
 </RCC>

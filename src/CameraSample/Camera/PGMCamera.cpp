@@ -113,13 +113,17 @@ bool PGMCamera::open(int devID)
         #ifdef _WIN32
             errno_t err;
             err = fopen_s(&mfile,mFileName.toStdString().c_str(),"rb");
-            qDebug("err:%d, %p",err,mfile);
+
 
             if (err != 0) {
                 qDebug("Error opening file\n");
                 fclose(mfile);
                 mfile=nullptr;
                 return false;
+            }
+            else
+            {
+                qDebug("load video success\n");
             }
         #else
             mfile = fopen(mFileName.toStdString().c_str(), "rb");
@@ -162,7 +166,7 @@ bool PGMCamera::open(int devID)
             printf("read frameSize from mfile failed\n");
         }
         cnt++;
-        mFPS = 100;
+        mFPS = 200;
 
         if(sampleSize == 8)
         {
@@ -308,7 +312,11 @@ void PGMCamera::startStreaming()
             mRawProc->wake();
         }
 
-        QThread::msleep(1000 / mFPS);
+        QElapsedTimer timer;
+        timer.start();
+        while (timer.elapsed() < 1000/mFPS) {
+            // Busy-wait or perform other operations
+        }
     }
 
     stop();

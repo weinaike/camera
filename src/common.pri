@@ -1,9 +1,10 @@
-QMAKE_CXXFLAGS += "/openmp"
+#QMAKE_CXXFLAGS += "/openmp"
 
 QMAKE_CXXFLAGS_RELEASE -= -Zc:strictStrings
 QMAKE_CFLAGS_RELEASE -= -Zc:strictStrings
 QMAKE_CFLAGS -= -Zc:strictStrings
 QMAKE_CXXFLAGS -= -Zc:strictStrings
+QMAKE_CXXFLAGS += -execution-charset:utf-8
 
 QMAKE_LFLAGS_WINDOWS += "/MACHINE:X64"
 QMAKE_LFLAGS_WINDOWS += "/LARGEADDRESSAWARE"
@@ -12,6 +13,22 @@ QMAKE_LFLAGS_WINDOWS += "/ENTRY:mainCRTStartup"
 OTHER_LIB_PATH = $$dirname(PWD)/OtherLibs
 
 JPEGTURBO = $$OTHER_LIB_PATH/jpeg-turbo
+
+ONNX = $$OTHER_LIB_PATH/onnx/win_x64/OnnxRuntime
+ONNX_INC = $$ONNX/include
+ONNX_LIB = $$ONNX/lib
+
+
+ZJV = $$OTHER_LIB_PATH/zjv
+ZJV_INC = $$ZJV/inc
+ZJV_INC += $$ZJV/inc/public
+
+
+CONFIG(debug, debug|release){
+    ZJV_LIB = $$ZJV/lib/Debug
+}else:CONFIG(release, debug|release){
+    ZJV_LIB = $$ZJV/lib/Release
+}
 
 FASTVIDEOPATH = $$OTHER_LIB_PATH/FastvideoSDK
 FASTVIDEO_SDK = $$FASTVIDEOPATH/fastvideo_sdk
@@ -60,6 +77,9 @@ FASTVIDEO_EXTRA_DLLS += $$FFMPEG_PATH/lib/swresample-3.dll
 
 FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
 
+FASTVIDEO_EXTRA_DLLS +=  $$ZJV_LIB/zj_pipe.dll
+FASTVIDEO_EXTRA_DLLS +=  $$ONNX_LIB/onnxruntime.dll
+
 
 #FASTVIDEO_EXTRA_DLLS += $$FFMPEG_SRC
 
@@ -68,11 +88,12 @@ FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
 #FASTVIDEO_EXTRA_DLLS += $$[QT_INSTALL_BINS]/icuuc58.dll
 #FASTVIDEO_EXTRA_DLLS += $$LIBTIFF_LIB/tiff.dll
 
-#CUDA_TOOLKIT_PATH = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.3"
+CUDA_TOOLKIT_PATH = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.0"
 #CUDA_TOOLKIT_PATH = "/usr/local/cuda"
-#CUDAINC += $$CUDA_TOOLKIT_PATH/include
-#CUDA_DLL_PATH = $$CUDA_TOOLKIT_PATH/bin
-#CUDA_DLL += $$CUDA_DLL_PATH/cudart64_12.dll
+CUDAINC += $$CUDA_TOOLKIT_PATH/include
+CUDA_DLL_PATH = $$CUDA_TOOLKIT_PATH/bin
+CUDA_DLL += $$CUDA_DLL_PATH/cudart64_12.dll
+CUDA_DLL += $$CUDA_DLL_PATH/cublas64_12.dll
 
 #CUDA_DLL += $$CUDA_DLL_PATH/nppc64_12.dll
 #CUDA_DLL += $$CUDA_DLL_PATH/nppif64_12.dll
@@ -85,6 +106,8 @@ FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
 #CUDA_LIB += -lnpps
 #CUDA_LIB += -lnppc
 #CUDA_LIB += -lcudart
+#CUDA_LIB += -lcuda
+#CUDA_LIB += -lcublas
 #CUDA_LIB += -lnvml
 
 # NVIDIA VIDEO CODEC SDK
@@ -93,11 +116,30 @@ FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
 #INCLUDEPATH += $$NVCODECS/include
 #LIBS += -L$$NVCODECS/Lib/$$PLATFORM -lnvcuvid
 
-#INCLUDEPATH += $$CUDAINC
+# TensorRT
+
+TRT_PATH = "D:/code/TensorRT-8.6.1.6"
+TRTINC += $$TRT_PATH/include
+TRT_DLL_PATH = $$TRT_PATH/lib
+TRT_DLLS += $$TRT_PATH/nvinfer.dll
+TRT_DLLS += $$TRT_PATH/nvonnxparser.dll
+TRT_DLLS += $$TRT_PATH/nvinfer_plugin.dll
+
+#cuDNN
+CUDNN_PATH = "D:/code/cudnn-windows-x86_64-8.9.7.29_cuda12-archive"
+CUDNN_INC = $$CUDNN_PATH/include
+CUDNN_DLL_PATH = $$CUDNN_PATH/bin
+CUDNN_LIB_PATH = $$CUDNN_PATH/lib/x64
+CUDNN_DLLS += $$CUDNN_DLL_PATH/cudnn64_8.dll
+
+
+INCLUDEPATH += $$CUDAINC
 INCLUDEPATH += $$FASTVIDEO_INC
 INCLUDEPATH += $$FASTVIDEOPATH/core_samples
 INCLUDEPATH += $$FFMPEG_PATH/include
 INCLUDEPATH += $$JPEGTURBO/include
+INCLUDEPATH += $$ONNX_INC
+INCLUDEPATH += $$ZJV_INC
 
 #QMAKE_CXXFLAGS += "/WX" # Treats all compiler warnings as errors.
 #QMAKE_LFLAGS_WINDOWS += "/NODEFAULTLIB:LIBCMT"
@@ -107,6 +149,8 @@ QT_DLLS += Qt"$$QT_MAJOR_VERSION"Gui
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Widgets
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Svg
 QT_DLLS += Qt"$$QT_MAJOR_VERSION"Network
+QT_DLLS += Qt"$$QT_MAJOR_VERSION"Charts
+
 #QT_DLLS += Qt"$$QT_MAJOR_VERSION"OpenGL
 #QT_DLLS += Qt5Xml
 #QT_DLLS += Qt5Multimedia
@@ -124,12 +168,13 @@ CONFIG(debug, debug|release){
 #LIBS += $$FASTVIDEO_LIB
 #LIBS += $$FASTVIDEO_EXTRA_LIBS
 LIBS += -L$$FFMPEG_LIB  -lavcodec -lavformat -lavutil -lswresample
-#LIBS += -L$$CUDA_TOOLKIT_PATH/lib/$$PLATFORM -lcudart -lcuda
+LIBS += -L$$CUDA_TOOLKIT_PATH/lib/$$PLATFORM -lcudart -lcuda -lcublas
 #LIBS += -lglu32 -lopengl32 -lgdi32 -luser32 -lMscms -lShell32 -lOle32 -lWs2_32 -lstrmiids -lComdlg32
 LIBS += -L$$JPEGTURBO/lib -ljpeg62_8bit
-
-
-
+LIBS += -L$$ONNX_LIB  -lonnxruntime
+LIBS += -L$$ZJV_LIB  -lzj_pipe
+LIBS += -L$$TRT_DLL_PATH -lnvinfer -lnvonnxparser -lnvinfer_plugin
+LIBS += -L$$CUDNN_LIB_PATH -lcudnn
 
 
 

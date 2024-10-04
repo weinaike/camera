@@ -74,31 +74,27 @@ RawProcessor::RawProcessor(GPUCameraBase *camera):QObject(nullptr),
     moveToThread(&mCUDAThread);
     mCUDAThread.start();
 
-    
-
-    
 }
 
 
 RawProcessor::~RawProcessor()
 {
     stop();
+
+    if(mPipe.get())
+    {
+        printf("mPipe.reset();\n");
+        mPipe.reset();
+        QElapsedTimer tm;
+        tm.start();
+        while(tm.elapsed() <= 1000){};
+    }
     mCUDAThread.quit();
     mCUDAThread.wait(3000);
 }
 
 fastStatus_t RawProcessor::init()
 {
-    printf("RawProcessor::init() start\n");
-    std::string cfg_file = "../configure/pipeline_welding.json";
-    mPipe = ZJVIDEO::PublicPipeline::create(cfg_file);
-    mPipe->init();
-
-    std::shared_ptr<ZJVIDEO::SetLoggerLevelControlData> level = std::make_shared<ZJVIDEO::SetLoggerLevelControlData>();
-    level->set_level(ZJVIDEO::ZJV_LOGGER_LEVEL_INFO);
-    std::shared_ptr<ZJVIDEO::ControlData> base_level = std::dynamic_pointer_cast<ZJVIDEO::ControlData>(level);
-    mPipe->control(base_level);
-
     if(!mProcessorPtr)
         return FAST_INVALID_VALUE;
 
@@ -107,7 +103,6 @@ fastStatus_t RawProcessor::init()
 
 void RawProcessor::start()
 {
-    mPipe->start();
     if(!mProcessorPtr || mCamera == nullptr)
         return;
 
@@ -118,8 +113,6 @@ void RawProcessor::stop()
 {
     mWorking = false;
     mWaitCond.wakeAll();
-
-    mPipe->stop();
 
     if(mFileWriterPtr)
     {
@@ -134,6 +127,8 @@ void RawProcessor::stop()
     {
         QThread::msleep(100);
     }
+    printf("RawProcessor::stop() mWorking = %d\n", mWorking);
+
 }
 
 void RawProcessor::wake()
@@ -164,10 +159,11 @@ void RawProcessor::startWorking()
     int bpc = GetBitsPerChannelFromSurface(mCamera->surfaceFormat());
     int maxVal = (1 << bpc) - 1;
     QString pgmHeader = QString("P5\n%1 %2\n%3\n").arg(mOptions.Width).arg(mOptions.Height).arg(maxVal);
-    qDebug() << "pgmHeader: " << pgmHeader;
+    qDebug() << "startWorking: " << pgmHeader;
 
     mWake = false;
-
+    qint64 previous = tm.elapsed();
+    int frameCount = 0;
     while(mWorking)
     {
         if(!mWake)
@@ -192,7 +188,7 @@ void RawProcessor::startWorking()
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
 
-        if(mPipe)
+        if(mInfer && mPipe)
         {      
             std::shared_ptr<ZJVIDEO::FrameData> frame = std::make_shared<ZJVIDEO::FrameData>(img->w, img->h, ZJVIDEO::ZJV_IMAGEFORMAT_GRAY8);
             frame->frame_id =  img->frameID;
@@ -228,7 +224,7 @@ void RawProcessor::startWorking()
                             weld_result.back_quality = weld->back_quality;
 
                             emit send_result(weld_result);
-
+                            // mPipe->show_debug_info();
                             // printf("WeldResult:     frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f\n", 
                             //     weld->frame_id, weld->camera_id, weld->weld_status, weld->status_score, weld->weld_depth, weld->front_quality, weld->back_quality);
                         }                
@@ -338,6 +334,15 @@ void RawProcessor::startWorking()
                 }
             }
         }
+        
+
+        frameCount++;
+        if(frameCount % 500 == 0)
+        {
+            qint64 now = tm.elapsed();
+            float avg = (float)(now-previous) / frameCount;
+            printf("avg time: %f\n", avg);
+        }
     }
     mWorking = false;
 }
@@ -430,6 +435,8 @@ void RawProcessor::startWriting()
     mWriting = true;
 }
 
+
+
 void RawProcessor::stopWriting()
 {
     mWriting = false;
@@ -445,4 +452,43 @@ void RawProcessor::stopWriting()
         writer->close();
     }
     mCodec = CUDAProcessorOptions::vcNone;
+}
+
+
+void RawProcessor::startInfer()
+{
+    mInfer = false;
+
+    std::string cfg_file = "../configure/pipeline_welding.json";
+    mPipe = ZJVIDEO::PublicPipeline::create(cfg_file);
+    if(mPipe.get() == nullptr)
+    {
+        printf("create  pipeline failed ");
+        return ;
+    }
+
+    mPipe->init();
+
+    std::shared_ptr<ZJVIDEO::SetLoggerLevelControlData> level = std::make_shared<ZJVIDEO::SetLoggerLevelControlData>();
+    level->set_level(ZJVIDEO::ZJV_LOGGER_LEVEL_DEBUG);
+    std::shared_ptr<ZJVIDEO::ControlData> base_level = std::dynamic_pointer_cast<ZJVIDEO::ControlData>(level);
+    mPipe->control(base_level);
+
+    std::shared_ptr<ZJVIDEO::SetRunModeControlData> mode_control = std::make_shared<ZJVIDEO::SetRunModeControlData>();
+    mode_control->set_mode(ZJVIDEO::ZJV_PIPELINE_RUN_MODE_LIVING);
+    std::shared_ptr<ZJVIDEO::ControlData> base_mode = std::dynamic_pointer_cast<ZJVIDEO::ControlData>(mode_control);
+    mPipe->control(base_mode);
+
+    mPipe->start();
+    mInfer = true;
+}
+
+void RawProcessor::stopInfer()
+{
+    mInfer = false;
+    if(mPipe)
+    {
+        mPipe->stop();
+    }
+    mPipe.reset();
 }
