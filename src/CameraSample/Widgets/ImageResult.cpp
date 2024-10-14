@@ -41,19 +41,34 @@ ImageResult::ImageResult(QWidget *parent) :
     ui->horizontalSlider->setTracking(false);
     // Set update timer
     connect(&mTimer, &QTimer::timeout, this, &ImageResult::UpdateSlider);    
-    // connect(&mTimer, &QTimer::timeout, this, &ImageResult::UpdateChart);
+    connect(&mTimer, &QTimer::timeout, this, &ImageResult::UpdateChart);
 
     mTimer.setSingleShot(false);
     // update every 40 msec
     mTimer.setInterval(200);
 
-    ui->resultTable->setColumnWidth(4,4);
+    ui->checkBox_control->setEnabled(false);
+    ui->checkBox_label->setEnabled(false);
+    ui->lineEdit_label_step->setEnabled(false);
+
+
+    ui->resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->resultTable->setColumnWidth(4,2);
     mModel->setRowCount(4);
-    mModel->setColumnCount(4);
+    mModel->setColumnCount(2);
+
+    
+    QDoubleValidator *validator = new QDoubleValidator(0.1, 100, 2, this);  // 限制输入范围在0到100之间
+    ui->lineEdit_length->setValidator(validator);
+    ui->lineEdit_thick->setValidator(validator);
+    ui->lineEdit_speed->setValidator(validator);
+
+    ui->lineEdit_label_step->setValidator(new QIntValidator(0, 100, this));
+
 
     // window qt编译， 要求文件编码格式为utf-8 with BOM
     QStringList horizontalHeaders;
-    horizontalHeaders << "预测瞬时值" << "预测平均值" << "标注瞬时值" << "标注平均值" ;
+    horizontalHeaders << "预测瞬时值" << "预测平均值" ;
     mModel->setHorizontalHeaderLabels(horizontalHeaders);
 
     QStringList verticalHeaders;
@@ -70,10 +85,11 @@ ImageResult::ImageResult(QWidget *parent) :
         }
     }
 
-    for (int col = 0; col < mModel->columnCount(); col++) {
-        ui->resultTable->setColumnWidth(col, 80);
-    }
+    // for (int col = 0; col < mModel->columnCount(); col++) {
+    //     ui->resultTable->setColumnWidth(col, 80);
+    // }
 
+    connect(mModel, &QAbstractItemModel::dataChanged, this, &ImageResult::on_data_changed);
 
     QFont font;
     font.setBold(false);
@@ -212,7 +228,7 @@ ImageResult::ImageResult(QWidget *parent) :
     depth_chartView->setRenderHint(QPainter::Antialiasing, false);
     stable_chartView->setRenderHint(QPainter::Antialiasing, false);
 
-    mFrameMax = 0;
+//    mFrameMax = 0;
     mTimer.start();
 }
 
@@ -221,6 +237,36 @@ ImageResult::~ImageResult()
 {
 
     delete ui;
+}
+void ImageResult::setCamera(GPUCameraBase* cameraPtr)
+{
+    mCamera = cameraPtr; 
+    if (mCamera != nullptr)
+    {
+        // mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, mFrameMax);
+        if(mCamera->devID() < 0)
+        {
+            ui->checkBox_control->setEnabled(false);
+            ui->checkBox_label->setEnabled(true);
+            ui->lineEdit_label_step->setEnabled(true);
+        }
+        else
+        {
+            ui->checkBox_control->setEnabled(true);
+            ui->checkBox_label->setEnabled(false);
+            ui->lineEdit_label_step->setEnabled(false);
+        }
+    }    
+}
+
+
+void ImageResult::setProc(RawProcessor* proc)
+{
+    mProc = proc;
+    if(mProc != nullptr)
+    {
+       ui->checkBox_control->setChecked(mProc->isControl());
+    }
 }
 
 void ImageResult::setStreaming(bool value)
@@ -266,7 +312,17 @@ void ImageResult::set_slider_value(int value)
         // 获取 与 frame_id 最近的 weld_result
         WeldResult result = {0};
         int minDifference = std::numeric_limits<int>::max();
-        for(auto r : mResults)
+        std::vector<WeldResult> results;
+        if(ui->checkBox_label->isChecked())
+        {
+            results = mResults_modified;
+        }
+        else
+        {
+            results = mResults ;
+        }
+
+        for(auto r : results)
         {
             int difference = std::abs(r.frame_id - frame_id);
             if (difference < minDifference)
@@ -283,9 +339,9 @@ void ImageResult::set_slider_value(int value)
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
 
         // 显示
-        mProc->transformToGLBuffer(img->data.get(), mProc->GetFrameBuffer(), img->w, img->h, img->surfaceFmt);
-        setImage((unsigned char *) mProc->GetFrameBuffer(), img->w, img->h, img->w);
-
+        CUDAProcessorBase* proc =  mProc->getCUDAProcessor() ;
+        proc->transformToGLBuffer(img->data.get(), proc->GetFrameBuffer(), img->w, img->h, img->surfaceFmt);
+        setImage((unsigned char *) proc->GetFrameBuffer(), img->w, img->h, img->w);
     }
 }
 
@@ -342,7 +398,17 @@ void ImageResult::UpdateChart()
     qreal maxY_status = std::numeric_limits<qreal>::lowest();
 
     // int last_frame_id = mFrameMax; 
-    for(auto result : mResults)
+    std::vector<WeldResult> show;
+    if(ui->checkBox_label->isChecked())
+    {
+        show = mResults_modified;
+    }
+    else
+    {
+        show = mResults ;
+    }
+
+    for(auto result : show)
     { 
         status_series->append(result.frame_id, result.weld_status);
         depth_series->append(result.frame_id, result.weld_depth);
@@ -373,7 +439,7 @@ void ImageResult::UpdateChart()
     maxY_front = maxY_front == minY_front ? minY_front + 1 : maxY_front;
     maxY_back = maxY_back == minY_back ? minY_back + 1 : maxY_back;
 
-    if(mResults.size() > 0)
+    if(show.size() > 0)
     {
         unsigned long long all = 0;
         mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all);
@@ -459,6 +525,10 @@ void ImageResult::get_result(WeldResult result)
     {
         UpdateTable(result);
     }  
+    if(ui->checkBox_control->isChecked())
+    {
+        ui->label_control->setText(QString::number(result.weld_status));
+    }
 
 }
 
@@ -471,10 +541,21 @@ void ImageResult::UpdateTable(WeldResult result)
     mModel->item(2, 0)->setText(QString::number(result.front_quality));
     mModel->item(3, 0)->setText(QString::number(result.back_quality));
 
-    mModel->item(0, 1)->setText(QString::number(mAvg.weld_status));
-    mModel->item(1, 1)->setText(QString::number(mAvg.weld_depth));
-    mModel->item(2, 1)->setText(QString::number(mAvg.front_quality));
-    mModel->item(3, 1)->setText(QString::number(mAvg.back_quality));
+    if(ui->checkBox_label->isChecked())
+    {
+        mModel->item(0, 1)->setText(QString::number(mAvg_modified.weld_status));
+        mModel->item(1, 1)->setText(QString::number(mAvg_modified.weld_depth));
+        mModel->item(2, 1)->setText(QString::number(mAvg_modified.front_quality));
+        mModel->item(3, 1)->setText(QString::number(mAvg_modified.back_quality));
+    }
+    else
+    {
+        mModel->item(0, 1)->setText(QString::number(mAvg.weld_status));
+        mModel->item(1, 1)->setText(QString::number(mAvg.weld_depth));
+        mModel->item(2, 1)->setText(QString::number(mAvg.front_quality));
+        mModel->item(3, 1)->setText(QString::number(mAvg.back_quality));
+    }
+
 }
 
 
@@ -613,6 +694,21 @@ void ImageResult::on_save_predict_result_clicked()
         return;
     }
 
+    // 判断lineEdit是否为空
+    if(ui->lineEdit_thick->text().isEmpty() || ui->lineEdit_speed->text().isEmpty())
+    {
+        QMessageBox::warning(this, "Warning", " 保存数据之前， 请输入工艺参数.");
+        return;
+    }
+
+    float thick = ui->lineEdit_thick->text().toFloat();
+    float speed = ui->lineEdit_speed->text().toFloat();
+    unsigned long long all = 0;
+    mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all);
+
+    unsigned long long fps = 1;
+    mCamera->GetStatistics(CameraStatEnum::statCurrFps100, fps);
+    double length = speed * all / fps * 100;
     if(mCamera->devID() < 0) 
     {
         // 将 GPUCameraBase 类型转换 为 PGMCamera
@@ -636,7 +732,8 @@ void ImageResult::on_save_predict_result_clicked()
             return;
         }
         QTextStream out(&file);
-
+        out << "thick, speed, length\n";
+        out << thick << ", " << speed << ", " << length << "\n";
         out << "frame_id, weld_status, weld_depth, front_quality, back_quality\n";
         for(auto result : mResults)
         {
@@ -685,8 +782,25 @@ void ImageResult::on_save_label_result_clicked()
             sendStatus("Open file failed");
             return;
         }
-        QTextStream out(&file);
 
+        // 判断lineEdit是否为空
+        if(ui->lineEdit_thick->text().isEmpty() || ui->lineEdit_speed->text().isEmpty())
+        {
+            QMessageBox::warning(this, "Warning", " 保存数据之前， 请输入工艺参数.");
+            return;
+        }
+
+        float thick = ui->lineEdit_thick->text().toFloat();
+        float speed = ui->lineEdit_speed->text().toFloat();
+        unsigned long long all = 0;
+        unsigned long long fps = 1;
+        mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all);
+        mCamera->GetStatistics(CameraStatEnum::statCurrFps100, fps);
+        double length = speed * all / fps * 100;
+
+        QTextStream out(&file);
+        out << "thick, speed, length\n";
+        out << thick << ", " << speed << ", " << length << "\n";
         out << "frame_id, weld_status, weld_depth, front_quality, back_quality\n";
         for(auto result : mResults_modified)
         {
@@ -703,7 +817,6 @@ void ImageResult::loadData()
     mResults_modified.clear();
     mAvg = {0};
     mAvg_modified = {0};
-    mModel->clear();
 
     if(mCamera->devID() < 0)
     {
@@ -712,11 +825,23 @@ void ImageResult::loadData()
         QFile file(filename + "_predict.txt");
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         {
-            qDebug() << "Open file failed";
+            sendStatus("Open predict file failed");
             return;
         }
+        sendStatus("Open predict file success");
         QTextStream in(&file);
         QString line = in.readLine();
+        line = in.readLine(); // 工艺参数标签
+        line = in.readLine(); // 工艺参数
+        QStringList list = line.split(",");
+        float thick = list[0].toFloat();
+        float speed = list[1].toFloat();
+        float length = list[2].toFloat();
+        ui->lineEdit_thick->setText(QString::number(thick));
+        ui->lineEdit_speed->setText(QString::number(speed));
+        ui->lineEdit_length->setText(QString::number(length));
+        line = in.readLine(); // 标签
+
         while (!in.atEnd())
         {
             line = in.readLine();
@@ -740,11 +865,21 @@ void ImageResult::loadData()
         QFile file_label(filename + "_label.txt");
         if (!file_label.open(QIODevice::ReadOnly | QIODevice::Text))
         {
-            qDebug() << "Open file failed";
+            sendStatus("Open label file failed");
             return;
         }
+        sendStatus("Open label file success");
         QTextStream in_label(&file_label);
-        line = in_label.readLine();
+        line = in_label.readLine(); // 工艺参数标签
+        line = in_label.readLine(); // 工艺参数
+        list = line.split(",");
+        thick = list[0].toFloat();
+        speed = list[1].toFloat();
+        length = list[2].toFloat();
+        ui->lineEdit_thick->setText(QString::number(thick));
+        ui->lineEdit_speed->setText(QString::number(speed));
+        ui->lineEdit_length->setText(QString::number(length));
+        line = in_label.readLine(); // 标签
         while (!in_label.atEnd())
         {
             line = in_label.readLine();
@@ -763,6 +898,21 @@ void ImageResult::loadData()
             mAvg_modified.back_quality = (mAvg_modified.back_quality * (mResults_modified.size() - 1)  + result.back_quality ) / mResults_modified.size();            
         }
         file_label.close();
+
+        qDebug() << "mResults.size():" << mResults.size();
+        if(ui->checkBox_label->isChecked())
+        {
+            if(mResults_modified.size()>0)  UpdateTable(mResults_modified[0]);
+        }
+        else
+        {
+            if(mResults.size()>0)   UpdateTable(mResults[0]);
+        }
+        
+        UpdateChart();
+        ui->horizontalSlider->setEnabled(true);
+        ui->checkBox_label->setEnabled(true);
+        ui->lineEdit_label_step->setEnabled(true);
     }    
 
 }
@@ -775,14 +925,122 @@ void ImageResult::clear()
         mResults.clear();
         mResults_modified.clear();
     }
-   
-    status_series->clear();
-    depth_series->clear();
-    front_series->clear();
-    back_series->clear();
-
+    ui->checkBox_label->setChecked(false);
+    ui->checkBox_control->setChecked(false);
+    // ui->lineEdit_thick->clear();
+    // ui->lineEdit_speed->clear();
+    // ui->lineEdit_length->clear();
     WeldResult res = {0};
+    mAvg = res;
+
     UpdateTable(res);
     mFrameMax = 0;
+    UpdateSlider();
+    UpdateChart();
 
 }
+
+void ImageResult::on_lineEdit_speed_editingFinished()
+{
+    double speed = ui->lineEdit_speed->text().toFloat();
+
+    unsigned long long all = 0;
+    mCamera->GetStatistics(CameraStatEnum::statVideoAllFrames, all);
+    unsigned long long fps = 0;
+    mCamera->GetStatistics(CameraStatEnum::statCurrFps100, fps);
+    double length = speed * all / fps * 100;
+    ui->lineEdit_length->setText(QString::number(length));
+}
+
+
+void ImageResult::on_checkBox_label_stateChanged(int arg1)
+{
+    if(arg1 == Qt::Checked)
+    {
+        ui->resultTable->setEditTriggers(QAbstractItemView::EditTriggers(QAbstractItemView::DoubleClicked));
+        // ui->resultTable->setSelectionBehavior(QAbstractItemView::SelectItems);
+        QStringList horizontalHeaders;
+        horizontalHeaders << "标注瞬时值" << "标注平均值" ;
+        mModel->setHorizontalHeaderLabels(horizontalHeaders);
+
+        if(mResults_modified.size()>0)  UpdateTable(mResults_modified[0]);
+    }
+    else
+    {
+        ui->resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        QStringList horizontalHeaders;
+        horizontalHeaders << "预测瞬时值" << "预测平均值" ;
+        mModel->setHorizontalHeaderLabels(horizontalHeaders);
+        if(mResults.size()>0)   UpdateTable(mResults[0]);
+    }
+    UpdateChart();
+}
+
+
+void ImageResult::on_resultTable_doubleClicked(const QModelIndex &index)
+{
+    if(! ui->checkBox_label->isChecked())
+    {
+        return;
+    }
+
+    int row = index.row();
+    int col = index.column();
+    qDebug("row:%d, col:%d", row, col);
+
+}
+
+void ImageResult::on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+{
+    if(ui->checkBox_label->isChecked())
+    {
+        int row = topLeft.row();
+        int col = topLeft.column();
+        QString value = mModel->item(row, col)->text();
+        bool ok;
+        float f = value.toFloat(&ok);
+        if(!ok)
+        {
+            QMessageBox::warning(this, "Warning", "请输入数字");
+            return;
+        }
+        qDebug("row:%d, col:%d, value:%f", row, col, f);
+
+               
+        unsigned long long frame_id = 0;
+        mCamera->GetStatistics(CameraStatEnum::statCurrFrameID, frame_id);
+
+        if(col == 0)
+        {
+
+        }
+        else if(col == 1)
+        {
+
+        }
+        else
+        {
+            // do nothing
+        }     
+    }
+}
+
+void ImageResult::on_checkBox_control_stateChanged(int arg1)
+{
+    if(mProc == nullptr)
+    {
+        return;
+    }
+    if(mCamera->devID() >= 0)
+    {
+        if(arg1 == Qt::Checked)
+        {
+            mProc->startControl();
+        }
+        else
+        {
+            mProc->stopControl();
+        }
+    }
+}
+

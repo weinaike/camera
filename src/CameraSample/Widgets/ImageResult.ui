@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1060</width>
-    <height>640</height>
+    <height>626</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <x>643</x>
      <y>-1</y>
      <width>411</width>
-     <height>611</height>
+     <height>621</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -215,26 +215,184 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="verticalLayoutWidget">
+  <widget class="QWidget" name="gridLayoutWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>510</y>
-     <width>160</width>
-     <height>90</height>
+     <width>652</width>
+     <height>111</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QGridLayout" name="gridLayout_2">
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
     <property name="leftMargin">
-     <number>5</number>
+     <number>10</number>
     </property>
     <property name="rightMargin">
-     <number>5</number>
+     <number>10</number>
     </property>
-    <item>
+    <property name="verticalSpacing">
+     <number>6</number>
+    </property>
+    <item row="0" column="1">
+     <widget class="QLabel" name="label_4">
+      <property name="text">
+       <string>选择模型</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QPushButton" name="save_label_result">
+      <property name="text">
+       <string>保存标注数据</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_11">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>焊缝长度 </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_length">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_14">
+        <property name="text">
+         <string>cm  </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="1">
+     <widget class="QPushButton" name="load_quality_model">
+      <property name="text">
+       <string>更新成形质量模型</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="3">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>焊接速度 </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_speed"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>cm/s</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPushButton" name="load_depth_model">
+      <property name="text">
+       <string>更新熔深预测模型</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="load_video">
+      <property name="text">
+       <string>加载视频</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>试样厚度 </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_thick">
+        <property name="inputMask">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>mm  </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="label_8">
+      <property name="text">
+       <string>试样参数</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QCheckBox" name="checkBox_control">
+      <property name="text">
+       <string>启动闭环控制</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="load_status_model">
+      <property name="text">
+       <string> 更新熔透状态模型 </string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QPushButton" name="save_predict_result">
+      <property name="text">
+       <string>   保存预测数据   </string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
      <widget class="QLabel" name="label_3">
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -246,102 +404,14 @@
        <enum>QFrame::Plain</enum>
       </property>
       <property name="text">
-       <string>触发与闭环控制</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="radioButton_in">
-      <property name="text">
-       <string>内触发（软件触发）</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="radioButton_out">
-      <property name="text">
-       <string>外触发（硬件触发）</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="checkBox_control">
-      <property name="text">
        <string>闭环控制</string>
       </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_2">
-   <property name="geometry">
-    <rect>
-     <x>160</x>
-     <y>510</y>
-     <width>160</width>
-     <height>101</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <property name="leftMargin">
-     <number>5</number>
-    </property>
-    <property name="rightMargin">
-     <number>5</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>选择模型</string>
-      </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QPushButton" name="load_status_model">
-      <property name="text">
-       <string>导入熔透状态模型</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="load_depth_model">
-      <property name="text">
-       <string>导入熔深预测模型</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="load_quality_model">
-      <property name="text">
-       <string>导入成形质量模型</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_4">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>510</y>
-     <width>160</width>
-     <height>129</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_4">
-    <property name="leftMargin">
-     <number>5</number>
-    </property>
-    <property name="rightMargin">
-     <number>5</number>
-    </property>
-    <item>
+    <item row="0" column="2">
      <widget class="QLabel" name="label_5">
       <property name="text">
        <string>数据</string>
@@ -351,28 +421,17 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QPushButton" name="load_video">
+    <item row="0" column="4">
+     <widget class="QLabel" name="label_15">
       <property name="text">
-       <string>加载视频</string>
+       <string>标注</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QPushButton" name="save_predict_result">
-      <property name="text">
-       <string>保存预测数据</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="save_label_result">
-      <property name="text">
-       <string>保存标注数据</string>
-      </property>
-     </widget>
-    </item>
-    <item>
+    <item row="1" column="4">
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <property name="leftMargin">
        <number>5</number>
@@ -383,7 +442,7 @@
       <item>
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>标注步进:</string>
+         <string> 标注步进:</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -391,7 +450,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEdit"/>
+       <widget class="QLineEdit" name="lineEdit_label_step">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="label_7">
@@ -402,94 +465,28 @@
       </item>
      </layout>
     </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_5">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>510</y>
-     <width>160</width>
-     <height>100</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_5">
-    <property name="leftMargin">
-     <number>5</number>
-    </property>
-    <property name="rightMargin">
-     <number>5</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>试样参数</string>
+    <item row="2" column="4">
+     <widget class="QCheckBox" name="checkBox_label">
+      <property name="enabled">
+       <bool>true</bool>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="text">
+       <string>启动人工标注</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
-    <item>
-     <layout class="QGridLayout" name="gridLayout">
-      <property name="leftMargin">
-       <number>5</number>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_control">
+      <property name="text">
+       <string/>
       </property>
-      <property name="rightMargin">
-       <number>5</number>
-      </property>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="lineEdit_speed"/>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLineEdit" name="lineEdit_length"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="text">
-         <string>焊缝长度</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="lineEdit_thick"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>试样厚度</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>焊接速度</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>mm</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>cm/s</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>cm</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     </widget>
     </item>
    </layout>
   </widget>

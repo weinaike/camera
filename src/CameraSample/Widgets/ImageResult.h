@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "GPUCameraBase.h"
 #include "CUDAProcessorBase.h"
+#include "RawProcessor.h"
 #include <QStandardItemModel>
 #include "customlabel.h"
 #include "WeldData.h"
@@ -24,8 +25,8 @@ class ImageResult : public QWidget
 public:
     explicit ImageResult(QWidget *parent = nullptr);
     ~ImageResult();
-    void setCamera(GPUCameraBase* cameraPtr){mCamera = cameraPtr;}
-    void setProc(CUDAProcessorBase* proc){mProc = proc;}
+    void setCamera(GPUCameraBase* cameraPtr);
+    void setProc(RawProcessor* proc);
     void setStreaming(bool value);
     void clear();
     void loadData();
@@ -69,13 +70,23 @@ private slots:
 
     void on_save_label_result_clicked();
 
+    void on_lineEdit_speed_editingFinished();
+
+    void on_checkBox_label_stateChanged(int arg1);
+
+    void on_resultTable_doubleClicked(const QModelIndex &index);
+
+    void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+
+    void on_checkBox_control_stateChanged(int arg1);
+
 private:
     int RewriteConfigFile(const QString &filename, const QString &key, const QString &value);
 
 private:
     Ui::ImageResult *ui;
     GPUCameraBase *mCamera{nullptr};
-    CUDAProcessorBase * mProc{nullptr};
+    RawProcessor * mProc{nullptr};
     QTimer mTimer;
     QPixmap *mPixmap;
 

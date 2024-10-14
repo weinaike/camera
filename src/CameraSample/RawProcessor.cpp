@@ -104,8 +104,12 @@ fastStatus_t RawProcessor::init()
 void RawProcessor::start()
 {
     if(!mProcessorPtr || mCamera == nullptr)
-        return;
-
+        return; 
+    if(mPipe)
+    {
+        std::shared_ptr<ZJVIDEO::ControlData> base_mode = std::make_shared<ZJVIDEO::ControlData>(ZJVIDEO::ZJV_CONTROLTYPE_CLEAR_CACHE);
+        mPipe->control(base_mode);
+    }
     QTimer::singleShot(0, this, [this](){startWorking();});
 }
 
@@ -187,6 +191,11 @@ void RawProcessor::startWorking()
         }
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
+        if(!img)
+        {
+            printf("(!img)");
+            continue;
+        }
 
         if(mInfer && mPipe)
         {      
@@ -491,4 +500,14 @@ void RawProcessor::stopInfer()
         mPipe->stop();
     }
     mPipe.reset();
+}
+
+void RawProcessor::startControl()
+{
+    mControl = true;
+}
+
+void RawProcessor::stopControl()
+{
+    mControl = false;
 }

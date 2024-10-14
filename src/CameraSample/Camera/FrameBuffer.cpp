@@ -38,6 +38,16 @@ CircularBuffer::CircularBuffer(QObject *parent) : QObject(parent)
 bool CircularBuffer::allocate(int width, int height, fastSurfaceFormat_t format)
 {
     QMutexLocker lock(&mMutex);
+    if(mImages.size()>0)
+    {
+        mRead =0;
+        mWritten = 0;
+        mCurrent = 0;
+        mLast = -1;
+        mDropped = 0;
+    }
+
+
 
     size_t pitch = GetPitchFromSurface(format, (unsigned)width);
     int bpc = GetBitsPerChannelFromSurface(format);
@@ -122,7 +132,6 @@ GPUImage_t *CircularBuffer::getLastImage()
     if(mImages.empty() || mLast < 0)
         return nullptr;
     mRead++;
-//    qDebug("Reading image = %d, ts = %u", mLast, QDateTime::currentDateTime().toMSecsSinceEpoch());
     return &(mImages[mLast]);
 }
 
@@ -131,5 +140,6 @@ void CircularBuffer::release()
     mLast = mCurrent;
     mWritten++;
     mDropped = mWritten - mRead;
-//    qDebug("Read = %d, written = %d, ts = %u", mRead, mWritten, QDateTime::currentDateTime().toMSecsSinceEpoch());
+    if(mWritten%100 == 0)
+        qDebug("Read = %d, written = %d, mDropped = %u", mRead, mWritten, mDropped);
 }

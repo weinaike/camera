@@ -85,8 +85,8 @@ bool PGMCamera::open(int devID)
     mDevID = devID;
 
     QString fileExtension = QFileInfo(mFileName).suffix();    
-    isRawFile = (fileExtension.toLower() == "raw");
-    if(isRawFile)
+    mIsRawFile = (fileExtension.toLower() == "raw");
+    if(mIsRawFile)
     {
         ImageData info =  parseFileName(mFileName.toStdString());
         if(info.width == 0 || info.height == 0 || info.bitDepth == 0)
@@ -165,7 +165,8 @@ bool PGMCamera::open(int devID)
         {
             printf("read frameSize from mfile failed\n");
         }
-        cnt++;
+        mCount = 0;
+        mCount++;
         mFPS = 200;
 
         if(sampleSize == 8)
@@ -217,8 +218,13 @@ bool PGMCamera::open(int devID)
             return false;
         }
 
+        mStatistics[CameraStatEnum::statCurrFrameID] = mCount;
+        mStatistics[CameraStatEnum::statVideoAllFrames] = mSamples;
+        mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
         mState = cstStopped;
         emit stateChanged(cstStopped);
+
+
     }
     else
     {
@@ -264,19 +270,20 @@ void PGMCamera::startStreaming()
 
     while(mState == cstStreaming && (finish == false))
     {
-        if(isRawFile)
+        if(mIsRawFile)
         {
             if (!feof(mfile))
             {
                 fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
-                cnt++;
+                mCount++;
 
-                mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
-                mStatistics[CameraStatEnum::statCurrFrameID] = cnt;
+
+                mStatistics[CameraStatEnum::statCurrFrameID] = mCount;
                 mStatistics[CameraStatEnum::statVideoAllFrames] = mSamples;
-                if (cnt % 100 == 0)
+                mStatistics[CameraStatEnum::statCurrFps100] = mFPS * 100;
+                if (mCount % 100 == 0)
                 {
-                    printf("read frame idx %d\n",cnt);
+                    printf("read frame idx %d\n",mCount);
                 }
                 // enum class cmrCameraStatistic {
                 //     statFramesTotal = 0, /// Total number of frames acquired
@@ -302,9 +309,9 @@ void PGMCamera::startStreaming()
         {
             QMutexLocker l(&mLock);
 
-            if(cnt >= mSamples - 1)
+            if(mCount >= mSamples - 1)
             {
-                cnt = 0;
+                mCount = 0;
                 fseek(mfile, 0, SEEK_SET);
                 finish = true;
             }
@@ -364,14 +371,15 @@ void PGMCamera::setValue(int value)
 {
     QMutexLocker l(&mLock);
     qDebug("PGMCamera:%d",value);
-    cnt = value * (mSamples - 1) / 100;
-    if(isRawFile)
+    mCount = value * (mSamples - 1) / 100;
+    mStatistics[CameraStatEnum::statCurrFrameID] = mCount;
+    if(mIsRawFile)
     {
-        fseek(mfile, cnt * mFrameSize, SEEK_SET);
+        fseek(mfile, mCount * mFrameSize, SEEK_SET);
 
         //获取当前帧
         fread(mInputImage.data.get(), 1, mInputImage.wPitch * mInputImage.h, mfile);
-        cnt++;
+        mCount++;
         #ifdef USE_CUDA
             cudaMemcpy(mInputBuffer.getBuffer(), mInputImage.data.get(), mInputImage.wPitch * mInputImage.h, cudaMemcpyHostToDevice);
         #else

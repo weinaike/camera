@@ -72,6 +72,11 @@ public:
     void stopWriting();
     void startInfer();
     void stopInfer();
+
+    void startControl();
+    void stopControl();
+    bool isControl(){return mControl;}
+
     void setOutputPath(const QString& path){mOutputPath = path;}
     void setFilePrefix(const QString& prefix){mFilePrefix = prefix;}
 
@@ -91,6 +96,7 @@ private:
     bool                 mWorking = false;
     bool                 mWriting = false;
     bool                 mInfer = false;
+    bool                 mControl = false;
     CUDAProcessorOptions mOptions;
     CUDAProcessorOptions::VideoCodec mCodec = CUDAProcessorOptions::vcNone;
 

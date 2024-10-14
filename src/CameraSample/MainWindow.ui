@@ -1349,11 +1349,6 @@ QSlider::handle:horizontal {
     <string>Close</string>
    </property>
   </action>
-  <action name="actionInfer_2">
-   <property name="text">
-    <string>actionInfer</string>
-   </property>
-  </action>
   <zorder>recordingWidget</zorder>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

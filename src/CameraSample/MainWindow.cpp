@@ -463,7 +463,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
     mProcessorPtr.reset(new RawProcessor(mCameraPtr.data()));
 #endif
     ui->result->setCamera(mCameraPtr.data());
-    ui->result->setProc(mProcessorPtr->getCUDAProcessor());
+    ui->result->setProc(mProcessorPtr.data());
     connect(mProcessorPtr.data(), SIGNAL(finished()), this, SLOT(onGPUFinished()));
     connect(mProcessorPtr.data(), SIGNAL(error()), this, SLOT(onGPUError()));
     connect(mProcessorPtr.data(), &RawProcessor::show_image, ui->result, &ImageResult::setImage);
@@ -486,6 +486,8 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
     mOptions.Packed = mCameraPtr->isPacked();
     updateOptions(mOptions);
 
+    mProcessorPtr->updateOptions(mOptions);
+    mProcessorPtr->init();
     int bpp = GetBitsPerChannelFromSurface(mCameraPtr->surfaceFormat());
 
     QString msg = QString(QStringLiteral("%1 %2, s\\n: %3 Width: %4, Height: %5, Pixel format: %6 bpp%7")).
@@ -504,6 +506,11 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
 
     ui->cameraController->setCamera(mCameraPtr.data());
     ui->cameraStatistics->setCamera(mCameraPtr.data());
+    if (mCameraPtr->devID() < 0)
+    {
+        ui->result->loadData();
+    }
+
     mCameraPtr->stop();
     // ui->actionPlay->setChecked(true);
     // QTimer::singleShot(0, this, [this](){
@@ -1366,7 +1373,6 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         updateOptions(mOptions);
         mProcessorPtr->updateOptions(mOptions);
         mProcessorPtr->init();
-
 #ifdef ENABLE_GL
         mRendererPtr->showImage();
 #endif
@@ -1377,6 +1383,13 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
             on_actionInfer_toggled(true);
         }else if(mInputMode == MODE_VIDEO){           
             // nothing to do
+            if(ui->actionInfer->isChecked())
+            {
+                ui->result->setStreaming(false);
+                ui->result->clear();         
+                mCameraPtr->open(-1);
+                ui->result->setStreaming(true);
+            }
         }
         mCameraPtr->start();
         mProcessorPtr->start();
@@ -1393,7 +1406,9 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         }
 
         mCameraPtr->stop();
+        QThread::msleep(500);
         mProcessorPtr->stop();
+        QThread::msleep(500);
     }
 }
 
@@ -1474,17 +1489,16 @@ void MainWindow::on_actionClose_triggered()
 {
     if(mCameraPtr)
     {
-        mCameraPtr->stop();
+        mCameraPtr->close();
+        qDebug()<<" Camera or video close. ";
         showStatus(tr("Camera or video close."));
-        QThread::msleep(100);
-        mCameraPtr->setProcessor(nullptr);
 
     }
 
     if(mProcessorPtr){
         mProcessorPtr->stop();
+        QThread::msleep(500);
         qDebug()<<" mProcessorPtr->stop();  ";
-        QThread::msleep(1000);
     }
 
 
@@ -1495,16 +1509,12 @@ void MainWindow::on_actionClose_triggered()
     ui->result->setCamera(nullptr);
     ui->result->clear();
 
-    if(mCameraPtr)
-    {
-        mCameraPtr->close();
-    }
 
 
+    mCameraPtr.reset(nullptr);
     qDebug()<<" mCameraPtr.reset(nullptr); ";
     mProcessorPtr.reset(nullptr);
-
-
+    qDebug()<<" mProcessorPtr.reset(nullptr); ";
 
 #ifdef ENABLE_GL
     if(mRendererPtr){

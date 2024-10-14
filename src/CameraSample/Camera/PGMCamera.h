@@ -58,9 +58,9 @@ private:
     void startStreaming();
     QString mFileName;
     FILE *mfile = nullptr;
-    int cnt = 0;
+    int mCount = 0;
     int mSamples = 0;
-    bool isRawFile = false;
+    bool mIsRawFile = false;
     int mFrameSize = 0;
     Image<MallocAllocator> mInputImage;
 };
