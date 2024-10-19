@@ -18,6 +18,9 @@ ONNX = $$OTHER_LIB_PATH/onnx/win_x64/OnnxRuntime
 ONNX_INC = $$ONNX/include
 ONNX_LIB = $$ONNX/lib
 
+SNAP7 = $$OTHER_LIB_PATH/snap7/
+#SNAP7_INC = $$SNAP7/c-cpp
+SNAP7_LIB = $$SNAP7/win64
 
 ZJV = $$OTHER_LIB_PATH/zjv
 ZJV_INC = $$ZJV/inc
@@ -79,6 +82,7 @@ FASTVIDEO_EXTRA_DLLS +=  $$JPEGTURBO/lib/jpeg62_8bit.dll
 
 FASTVIDEO_EXTRA_DLLS +=  $$ZJV_LIB/zj_pipe.dll
 FASTVIDEO_EXTRA_DLLS +=  $$ONNX_LIB/onnxruntime.dll
+FASTVIDEO_EXTRA_DLLS +=  $$SNAP7_LIB/snap7.dll
 
 
 #FASTVIDEO_EXTRA_DLLS += $$FFMPEG_SRC
@@ -140,6 +144,7 @@ INCLUDEPATH += $$FFMPEG_PATH/include
 INCLUDEPATH += $$JPEGTURBO/include
 INCLUDEPATH += $$ONNX_INC
 INCLUDEPATH += $$ZJV_INC
+#INCLUDEPATH += $$SNAP7_INC
 
 #QMAKE_CXXFLAGS += "/WX" # Treats all compiler warnings as errors.
 #QMAKE_LFLAGS_WINDOWS += "/NODEFAULTLIB:LIBCMT"
@@ -175,7 +180,7 @@ LIBS += -L$$ONNX_LIB  -lonnxruntime
 LIBS += -L$$ZJV_LIB  -lzj_pipe
 LIBS += -L$$TRT_DLL_PATH -lnvinfer -lnvonnxparser -lnvinfer_plugin
 LIBS += -L$$CUDNN_LIB_PATH -lcudnn
-
+LIBS += -L$$SNAP7_LIB  -lsnap7
 
 
 contains(DEFINES, SUPPORT_XIMEA){

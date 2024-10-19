@@ -50,6 +50,10 @@ bool LucidCamera::open(int devID)
         mManufacturer = QString::fromStdString(devInfo.VendorName().c_str());
         mModel = QString::fromStdString(devInfo.ModelName().c_str());
         mSerial = QString::fromStdString(devInfo.SerialNumber().c_str());
+        mIpAddress = QString::fromStdString(devInfo.IpAddressStr().c_str());
+        mMacAddress = QString::fromStdString(devInfo.MacAddressStr().c_str());
+        mSubnetMask = QString::fromStdString(devInfo.SubnetMaskStr().c_str());
+        mGateway = QString::fromStdString(devInfo.DefaultGatewayStr().c_str());
 
         INodeMap* nodeMap = mDevice->GetNodeMap();
 
@@ -80,7 +84,10 @@ bool LucidCamera::open(int devID)
                 if(entry)
                     pixelFormats << entry->GetValue();
             }
-
+            for(const auto & fmt : pixelFormats)
+            {
+                qDebug() << "Available pixel format: " << fmt;
+            }
             //BayerRG >> RGGB
             //BayerGR >> GRBG
             //BayerGB >> GBRG
@@ -123,6 +130,15 @@ bool LucidCamera::open(int devID)
                 fmtString = "BayerBG12p";
                 mWhite = 4095;
                 mIsColor = true;
+            }
+            else if(pixelFormats.contains(Mono8))
+            {
+                mImageFormat = cif8bpp;
+                mSurfaceFormat = FAST_I8;
+                mPattern = FAST_BAYER_NONE;
+                fmtString = "Mono8";
+                mWhite = 255;
+                mIsColor = false;
             }
             else if(pixelFormats.contains(Mono12p))
             {
@@ -218,15 +234,7 @@ bool LucidCamera::open(int devID)
                 mWhite = 255;
                 mIsColor = true;
             }
-            else if(pixelFormats.contains(Mono8))
-            {
-                mImageFormat = cif8bpp;
-                mSurfaceFormat = FAST_I8;
-                mPattern = FAST_BAYER_NONE;
-                fmtString = "Mono8";
-                mWhite = 255;
-                mIsColor = false;
-            }
+
 
             Arena::SetNodeValue<GenICam::gcstring>(nodeMap, "PixelFormat", fmtString);
 
@@ -354,7 +362,7 @@ void LucidCamera::startStreaming()
         //    if TCP streaming is available on the camera, if we will enable it, oherwise we
         //    demonstrate how to enable auto packetsize negotiation and packet resend for
         //    traditional UDP pased GVSP stream.
-        if (IsImplemented(mDevice->GetNodeMap()->GetNode("TCPEnable")))
+        if (IsImplemented(mDevice->GetNodeMap()->GetNode("TCPEnable")) && false)
         {
             // The TCPEnable node will tell the camera to use the TCP datastream engine.  When
             //    enabled on the camera Arena will switch to using the TCP datastream engine.
@@ -780,5 +788,68 @@ void LucidCamera::UpdateStatistics(Arena::IImage* pImage)
         mPrevFrameTime = kZeroTime;
         mTotalBytesTransferred=0;
     }
-};
+}
+
+int LucidCamera::WriteStreamables(std::string fileName)
+{
+    // Write features to file
+    if(mDevice == nullptr){
+        printf("No camera connected");
+        return -1;
+    }
+    
+    GenICam::gcstring fileNameStr(fileName.c_str());
+    try
+    {        
+        Arena::FeatureStream featureStream(mDevice->GetNodeMap());        
+        featureStream.Write(fileNameStr);
+    }
+    catch (GenICam::GenericException& ge)
+    {
+        qDebug() << "GenICam exception thrown: " << ge.what();
+        return -1;
+    }
+    catch (std::exception& ex)
+    {
+        qDebug() << "Standard exception thrown: " << ex.what();
+        return -1;
+    }
+    catch (...)
+    {
+        qDebug() << "Unexpected exception thrown";
+        return -1;
+    }
+
+    return 0;
+}
+
+int LucidCamera::ReadStreamables(std::string fileName)
+{
+    // Read features to devices
+    try
+    {
+        Arena::FeatureStream featureStream(mDevice->GetNodeMap());
+        GenICam::gcstring fileNameStr(fileName.c_str());
+        featureStream.Read(fileNameStr);    
+    }
+    catch (GenICam::GenericException& ge)
+    {
+        qDebug() << "GenICam exception thrown: " << ge.what();
+        return -1;
+    }
+    catch (std::exception& ex)
+    {
+        qDebug() << "Standard exception thrown: " << ex.what();
+        return -1;
+    }
+    catch (...)
+    {
+        qDebug() << "Unexpected exception thrown";
+        return -1;
+    }
+
+    return 0;
+}
+
+
 #endif

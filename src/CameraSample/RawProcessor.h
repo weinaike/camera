@@ -44,6 +44,7 @@
 #include "ControlData.h"
 #include "PublicPipeline.h"
 #include "WeldData.h"
+#include "snap7.h"
 
 class CUDAProcessorBase;
 class CircularBuffer;
@@ -68,13 +69,13 @@ public:
     fastStatus_t         getLastError();
     QString              getLastErrorDescription();
     QMap<QString, float> getStats();
-    void startWriting();
+    QString startWriting();
     void stopWriting();
     void startInfer();
     void stopInfer();
 
-    void startControl();
-    void stopControl();
+    int startControl(const char * ip, int rack, int slot );
+    int stopControl();
     bool isControl(){return mControl;}
 
     void setOutputPath(const QString& path){mOutputPath = path;}
@@ -102,6 +103,8 @@ private:
 
     QScopedPointer<CUDAProcessorBase> mProcessorPtr;
     QScopedPointer<AsyncWriter>       mFileWriterPtr;
+    TS7Client *          plcClient = nullptr;
+
     QMutex               mWaitMutex;
     QWaitCondition       mWaitCond;
     bool                 mWake = false;

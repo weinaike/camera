@@ -164,7 +164,8 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 
-
+    ui->cboBayerType->setVisible(false);
+    ui->cboBayerPattern->setVisible(false);
     {
         QSignalBlocker b(ui->cboBayerPattern);
         ui->cboBayerPattern->addItem("RGGB", FAST_BAYER_RGGB);
@@ -182,16 +183,19 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         QSignalBlocker b(ui->cboSamplingFmt);
         ui->cboSamplingFmt->addItem(QStringLiteral("Y"), FAST_JPEG_Y);
-        ui->cboSamplingFmt->addItem(QStringLiteral("420"), FAST_JPEG_420);
-        ui->cboSamplingFmt->addItem(QStringLiteral("422"), FAST_JPEG_422);
-        ui->cboSamplingFmt->addItem(QStringLiteral("444"), FAST_JPEG_444);
+        // ui->cboSamplingFmt->addItem(QStringLiteral("420"), FAST_JPEG_420);
+        // ui->cboSamplingFmt->addItem(QStringLiteral("422"), FAST_JPEG_422);
+        // ui->cboSamplingFmt->addItem(QStringLiteral("444"), FAST_JPEG_444);
     }
 
     {
         QSignalBlocker b(ui->cboOutFormat);
-        ui->cboOutFormat->addItem(QStringLiteral("JPEG"), CUDAProcessorOptions::vcJPG);
+        ui->cboOutFormat->addItem(QStringLiteral("RAW"), CUDAProcessorOptions::vcRAW);        
         ui->cboOutFormat->addItem(QStringLiteral("Motion JPEG"), CUDAProcessorOptions::vcMJPG);
-        ui->cboOutFormat->addItem(QStringLiteral("PGM"), CUDAProcessorOptions::vcPGM);
+        ui->cboOutFormat->addItem(QStringLiteral("JPEG"), CUDAProcessorOptions::vcJPG);
+        // ui->cboOutFormat->addItem(QStringLiteral("PGM"), CUDAProcessorOptions::vcPGM);
+        ui->cboOutFormat->setCurrentIndex(0);
+        
     }
 
     QSignalBlocker b3(ui->cboGamma);
@@ -257,7 +261,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->menuBar->insertMenu(ui->actionWB_picker, menuPtr);        
     }
 
-#if 0
+#if 1
 #if defined SUPPORT_XIMEA || \
     defined SUPPORT_GENICAM || \
     defined SUPPORT_FLIR || \
@@ -372,6 +376,11 @@ QMenu *MainWindow::createPopupMenu()
         if(act->text() == QStringLiteral("Processing options"))
         {
             ui->processWidget->hide();
+            menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("Camera settings"))
+        {
+            ui->dockWidget->hide();
             menu->removeAction(act);
         }
     }
@@ -497,7 +506,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
             arg(bpp).
             arg(mCameraPtr->isPacked() ? QStringLiteral(" packed ") : QString());
 
-    // mStatusLabel->setText(msg);
+    mStatusLabel->setText(msg);
 
 #ifdef ENABLE_GL
     mRendererPtr->setImageSize(QSize(mOptions.Width, mOptions.Height));
@@ -976,7 +985,7 @@ void MainWindow::on_actionRecord_toggled(bool arg1)
         mProcessorPtr->setOutputPath(ui->txtOutPath->text());
         mProcessorPtr->setFilePrefix(ui->txtFilePrefix->text());
         mProcessorPtr->updateOptions(mOptions);
-        mProcessorPtr->startWriting();
+        QString filename = mProcessorPtr->startWriting();
     }
     else
     {
@@ -1419,6 +1428,7 @@ void MainWindow::on_actionInfer_toggled(bool checked)
     {
         QMessageBox::critical(this, QCoreApplication::applicationName(),
                               QObject::tr("CUDA processor is not initialized."));
+        QSignalBlocker b(ui->actionInfer);
         ui->actionInfer->setChecked(false);
         return;
     }
@@ -1487,6 +1497,9 @@ void setBitrate(QComboBox* cb, int bitrate)
 
 void MainWindow::on_actionClose_triggered()
 {
+
+    on_actionPlay_toggled(false);
+    QThread::msleep(1000);
     if(mCameraPtr)
     {
         mCameraPtr->close();
@@ -1544,5 +1557,10 @@ void MainWindow::onModeChanged(INPUT_MODE mode)
     if (mCameraPtr == nullptr)
         return;
     if(mCameraPtr->devID() >= 0)
+    {
         mInputMode = mode;
+        qDebug("mInputMode:%d", mInputMode);
+    }
+            
+
 }

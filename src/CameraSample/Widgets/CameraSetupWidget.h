@@ -68,6 +68,10 @@ private slots:
 
     void on_radioButton_ext_clicked(bool checked);
 
+    void on_pushButton_toFile_clicked();
+
+    void on_pushButton_toDev_clicked();
+
 private:
     Ui::CameraSetupWidget *ui;
     GPUCameraBase* mCameraPtr = nullptr;

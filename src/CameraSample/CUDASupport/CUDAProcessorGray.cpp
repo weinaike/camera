@@ -266,6 +266,7 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
     }
 #else
     // 采用GtGWidget显示， 支持灰度显示， 与RGB24显示， 当前仅支持灰度显示
+    // qDebug("CUDAProcessorGray::Transform: imgWidth %d, imgHeight %d, opts.SurfaceFmt %d\n", imgWidth, imgHeight, opts.SurfaceFmt);
     transformToGLBuffer(image->data.get(), hGLBuffer, imgWidth, imgHeight, opts.SurfaceFmt);
     memcpy(mSrcCpuPtr, hGLBuffer, imgWidth * imgHeight * sizeof(unsigned char) );
 #endif
@@ -281,7 +282,7 @@ fastStatus_t CUDAProcessorGray::Transform(GPUImage_t *image, CUDAProcessorOption
     stats2 = stats;
     mut2.unlock();
 
-    emit finished();
+    // emit finished();
 
     return FAST_OK;
 }

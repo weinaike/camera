@@ -237,3 +237,40 @@ void AsyncMJPEGWriter::processTask(FileWriterTask* task)
 
     mEncoderPtr->addJPEGFrame(task->data, int(task->size));
 }
+
+
+// AsyncRawWriter implementation
+AsyncRawWriter::AsyncRawWriter(int size, QObject *parent):
+    AsyncWriter(size, parent)
+{
+    mMaxSize = size;
+    mWorkThread.setObjectName(QStringLiteral("Raw Writer Thread"));
+    moveToThread(&mWorkThread);
+
+    mWorkThread.start();
+    start();
+}
+
+bool AsyncRawWriter::open(const QString& outFileName)
+{
+    if(!QFileInfo::exists(QFileInfo(outFileName).path()))
+        return false;
+    mFile = std::ofstream(outFileName.toStdString(), std::ios::binary);
+    if (!mFile.is_open())
+        return false;
+    return true;
+}
+
+void AsyncRawWriter::close()
+{
+    if (mFile.is_open())
+        mFile.close();
+}
+
+void AsyncRawWriter::processTask(FileWriterTask* task)
+{
+    if(task == nullptr)
+        return;
+
+    mFile.write((char*)task->data, task->size);
+}

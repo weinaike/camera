@@ -21,6 +21,10 @@ public:
     virtual bool getParameter(cmrCameraParameter param, float& val);
     virtual bool setParameter(cmrCameraParameter param, float val);
     virtual bool getParameterInfo(cmrParameterInfo& info);
+
+
+    int WriteStreamables(std::string);
+    int ReadStreamables(std::string);
 protected:
 
 private:

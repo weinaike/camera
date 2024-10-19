@@ -76,7 +76,8 @@ public:
         vcMJPG,
         vcJPG,
         vcPGM,
-        vcHEVC
+        vcHEVC,
+        vcRAW
     };
 
     CUDAProcessorOptions()

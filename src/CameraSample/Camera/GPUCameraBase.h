@@ -124,6 +124,9 @@ public:
     ///Get camera parameter information. Return true on success, false otherwise.
     virtual bool getParameterInfo(cmrParameterInfo& info) = 0;
 
+    virtual int WriteStreamables(std::string){return 0;};
+    virtual int ReadStreamables(std::string ){return 0;};
+
     ///Get current camera state
     cmrCameraState state() {return mState;}
 
@@ -145,6 +148,7 @@ public:
 
     int width() {return mWidth;}
     int height(){return mHeight;}
+    int bitsPerPixel(){return mImageFormat == cif8bpp ? 8 : mImageFormat == cif10bpp ? 10 : mImageFormat == cif12bpp ? 12 : mImageFormat == cif12bpp_p ? 12 : 16;}
 
     int whiteLevel(){return mWhite;}
     int blackLevel(){return mBblack;}
@@ -153,6 +157,10 @@ public:
     QString model(){return mModel;}
     QString manufacturer(){return mManufacturer;}
     QString serial(){return mSerial;}
+    QString ipAddress(){return mIpAddress;}
+    QString macAddress(){return mMacAddress;}
+    QString subnetMask(){return mSubnetMask;}
+    QString gateway(){return mGateway;}
 
     CircularBuffer* getFrameBuffer(){return &mInputBuffer;}
 
@@ -178,6 +186,11 @@ protected:
     QString mModel;
     QString mManufacturer;
     QString mSerial;
+    QString mIpAddress;
+    QString mMacAddress;
+    QString mSubnetMask;
+    QString mGateway;
+
 
     int mWidth  = 0;
     int mHeight = 0;

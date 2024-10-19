@@ -30,7 +30,7 @@ public:
     void setStreaming(bool value);
     void clear();
     void loadData();
-
+    void setFilename(const QString& filename){mFilename = filename;};
 
 
 signals:
@@ -76,9 +76,14 @@ private slots:
 
     void on_resultTable_doubleClicked(const QModelIndex &index);
 
-    void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+    // void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+    void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());
 
     void on_checkBox_control_stateChanged(int arg1);
+
+    void on_checkBox_control_clicked(bool checked);
+
+    void on_checkBox_label_clicked(bool checked);
 
 private:
     int RewriteConfigFile(const QString &filename, const QString &key, const QString &value);
@@ -89,7 +94,7 @@ private:
     RawProcessor * mProc{nullptr};
     QTimer mTimer;
     QPixmap *mPixmap;
-
+    QString mFilename;
     QMutex mMutex;
 
     bool mStream = false;
@@ -113,5 +118,6 @@ private:
     QLineSeries *redLineSeries_stable = nullptr;
 
     int mFrameMax;
+    bool mIsInternalUpdate = false;
 };
 #endif // IMAGERESULT_H

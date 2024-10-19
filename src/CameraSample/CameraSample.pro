@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     Widgets/CameraSetupWidget.cpp \
     Widgets/camerastatistics.cpp \
     RtspServer/JpegEncoder.cpp \
-    Widgets/customlabel.cpp
+    Widgets/customlabel.cpp \
+    snap7.cpp
 
 
 HEADERS  += MainWindow.h \
@@ -71,7 +72,8 @@ HEADERS  += MainWindow.h \
     RtspServer/common_utils.h \
     RtspServer/JpegEncoder.h \
     version.h \
-    Widgets/customlabel.h
+    Widgets/customlabel.h \
+    snap7.h
 
 win32{
     SOURCES +=  $$PWD/../../OtherLibs/FastvideoSDK/common/BaseAllocator.cpp \

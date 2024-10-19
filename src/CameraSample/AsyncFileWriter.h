@@ -38,7 +38,7 @@
 #include "MallocAllocator.h"
 #include "MJPEGEncoder.h"
 #include <memory>
-
+#include <fstream>
 
 struct FileWriterTask
 {
@@ -125,4 +125,21 @@ protected:
 private:
     QScopedPointer<MJPEGEncoder> mEncoderPtr;
 };
+
+
+
+class AsyncRawWriter : public AsyncWriter
+{
+    Q_OBJECT
+public:
+    explicit AsyncRawWriter(int size = -1, QObject *parent = nullptr);
+    bool open(const QString& outFileName);
+    void close();
+
+protected:
+    virtual void processTask(FileWriterTask* task);
+private:
+    std::ofstream mFile;
+};
+
 #endif // ASYNCJPEGWRITER_H

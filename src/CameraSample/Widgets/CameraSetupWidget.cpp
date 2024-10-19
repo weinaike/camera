@@ -28,12 +28,19 @@
 
 #include "CameraSetupWidget.h"
 #include "ui_CameraSetupWidget.h"
+#include <QFileDialog>
+#include <QString>
+#include <QMessageBox>
 
 CameraSetupWidget::CameraSetupWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CameraSetupWidget)
 {
     ui->setupUi(this);
+    ui->spnFrameRate->setEnabled(false);
+    ui->spnExposureTime->setEnabled(false);
+    ui->radioButton_ext->setCheckable(false);
+    ui->radioButton_int->setCheckable(false);
 }
 
 CameraSetupWidget::~CameraSetupWidget()
@@ -45,32 +52,27 @@ void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
 {
     mCameraPtr = cameraPtr;
 
-    if(mCameraPtr == nullptr)
+    if(mCameraPtr != nullptr)
     {
-        ui->spnFrameRate->setEnabled(false);
-        ui->spnExposureTime->setEnabled(false);
-        ui->radioButton_ext->setEnabled(false);
-        ui->radioButton_int->setEnabled(false);
-    }
-    else if(mCameraPtr->state() == GPUCameraBase::cstClosed)
-    {
-        ui->spnFrameRate->setEnabled(false);
-        ui->spnExposureTime->setEnabled(false);
-        ui->radioButton_ext->setEnabled(false);
-        ui->radioButton_int->setEnabled(false);
-    }
-    else
-    {
+        qDebug("Camera ID: %d\n", cameraPtr->devID());
         if(cameraPtr->devID() < 0)
         {
-            ui->radioButton_ext->setEnabled(false);
-            ui->radioButton_int->setEnabled(false);
+            ui->radioButton_ext->setCheckable(false);
+            ui->radioButton_int->setCheckable(false);
         }
         else
         {
-            ui->radioButton_ext->setEnabled(true);
-            ui->radioButton_int->setEnabled(true);
-            ui->radioButton_int->setChecked(true);
+            ui->radioButton_ext->setCheckable(true);    
+            ui->radioButton_int->setCheckable(true);             
+            {
+                QSignalBlocker b(ui->radioButton_int);            
+                ui->radioButton_int->setChecked(true);
+            }
+            
+            ui->label_ip->setText(cameraPtr->ipAddress());
+            ui->label_mac->setText(cameraPtr->macAddress());
+            ui->label_gateway->setText(cameraPtr->gateway());
+            ui->label_subnet->setText(cameraPtr->subnetMask());
         }
         ui->spnFrameRate->setEnabled(true);
         ui->spnExposureTime->setEnabled(true);
@@ -200,5 +202,52 @@ void CameraSetupWidget::on_radioButton_ext_clicked(bool checked)
     if(mCameraPtr->devID() < 0)
         return;
     emit modeChanged(INPUT_MODE::MODE_CAMERA_EXTERNAL_TRIGGER);
+}
+
+
+void CameraSetupWidget::on_pushButton_toFile_clicked()
+{
+    if(mCameraPtr == nullptr)
+        return;
+    if(mCameraPtr->devID() < 0)
+        return;
+    
+    // 打开保存文件对话框
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "features.txt",
+                                                    tr("Text Files (*.txt)"));
+    if (fileName.isEmpty()) {
+        qDebug("User cancelled the dialog or no file was selected.");
+    } else {
+        qDebug("Save to file: %s\n", fileName.toStdString().c_str());
+        // 在这里处理用户选择的文件路径，例如保存文件
+        int ret = mCameraPtr->WriteStreamables(fileName.toStdString());
+        if(ret < 0)
+        {
+            // 弹出错误对话框
+            QMessageBox::critical(this, tr("Error"), tr("Failed to save the file. Error code: %1").arg(ret));                        
+        }
+    }
+
+}
+
+
+void CameraSetupWidget::on_pushButton_toDev_clicked()
+{
+    if(mCameraPtr == nullptr)
+        return;
+    if(mCameraPtr->devID() < 0)
+        return;
+    
+    // 打开保存文件对话框
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "features.txt",
+                                                    tr("Text Files (*.txt)"));
+    qDebug("load to device from: %s\n", fileName.toStdString().c_str());
+    int ret = mCameraPtr->ReadStreamables(fileName.toStdString());
+    if(ret < 0)
+    {
+        // 弹出错误对话框
+        QMessageBox::critical(this, tr("Error"), tr("Failed to load the file. Error code: %1").arg(ret));                        
+    }
+
 }
 
