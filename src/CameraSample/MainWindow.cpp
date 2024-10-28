@@ -249,8 +249,7 @@ MainWindow::MainWindow(QWidget *parent) :
     openButton->setPopupMode(QToolButton::MenuButtonPopup);
     openButton->addAction(ui->actionOpenGrayPGM);
 
-    qRegisterMetaType<GPUCameraBase::cmrCameraState>("cmrCameraState");
-    qRegisterMetaType<WeldResult>("WeldResult");
+
 
 
     // View
@@ -332,6 +331,8 @@ MainWindow::MainWindow(QWidget *parent) :
     delete ui->gtgDockWidget;
     // removeDockWidget(ui->cameraStatWidget);
     // ui->cameraStatWidget->hide();
+
+    ui->cameraController->setEnabled(false);
 }   
 
 MainWindow::~MainWindow()
@@ -382,6 +383,16 @@ QMenu *MainWindow::createPopupMenu()
         {
             ui->dockWidget->hide();
             menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("Recording"))
+        {
+            ui->recordingWidget->hide();
+            // menu->removeAction(act);
+        }
+        if(act->text() == QStringLiteral("Test"))
+        {
+            ui->gtgDockWidget->hide();
+            // menu->removeAction(act);
         }
     }
     // ui->dockWidget->hide();
@@ -454,10 +465,13 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
     if (devID < 0)
     {
         showStatus("Video Ready");
+        onModeChanged(INPUT_MODE::MODE_VIDEO);
+        ui->cameraController->setEnabled(false);
     }
     else
     {
         showStatus("Camera Ready");
+        ui->cameraController->setEnabled(true);
     }
     
     connect(mCameraPtr.data(),
@@ -521,12 +535,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
     }
 
     mCameraPtr->stop();
-    // ui->actionPlay->setChecked(true);
-    // QTimer::singleShot(0, this, [this](){
-    //     mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, 30000);
-    //     ui->cameraController->setExposureCamera(30000);
-    // });
-
+    ui->test->setCamera(mCameraPtr.data());
 }
 
 void MainWindow::openCamera(int devID)
@@ -997,6 +1006,7 @@ void MainWindow::on_actionRecord_toggled(bool arg1)
 
 void MainWindow::on_actionExit_triggered()
 {
+    on_actionClose_triggered();
     close();
 }
 
@@ -1317,6 +1327,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
         ui->actionRecord->setEnabled(false);
         ui->actionInfer->setEnabled(false);
         ui->result->setStreaming(false);
+        ui->cameraController->setEnabled(false);
     }
     else if(newState == GPUCameraBase::cstStopped)
     {        
@@ -1332,7 +1343,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
         }else if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
             ui->actionPlay->setEnabled(true);
             ui->actionRecord->setEnabled(false);
-            ui->actionInfer->setEnabled(false);
+            ui->actionInfer->setEnabled(true);
         }
         else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
             ui->actionPlay->setEnabled(true);
@@ -1340,6 +1351,8 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
             ui->actionInfer->setEnabled(false);
         }
         ui->result->setStreaming(false);
+        ui->cameraController->setEnabled(true);
+       
     }
     else if(newState == GPUCameraBase::cstStreaming)
     {        
@@ -1354,7 +1367,7 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
         }else if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
             ui->actionPlay->setEnabled(true);
             ui->actionRecord->setEnabled(false);
-            ui->actionInfer->setEnabled(true);
+            ui->actionInfer->setEnabled(false);
         }
         else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
             ui->actionPlay->setEnabled(true);
@@ -1362,6 +1375,31 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
             ui->actionInfer->setEnabled(false);
         }
         ui->result->setStreaming(true);
+        ui->cameraController->setEnabled(false);
+    }
+    else if(newState == GPUCameraBase::cstFinished)
+    {        
+        {
+            QSignalBlocker b(ui->actionPlay);
+            ui->actionPlay->setChecked(false);
+        }
+        if(mInputMode == MODE_VIDEO){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(true);
+        }else if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(true);
+        }
+        else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            ui->actionPlay->setEnabled(true);
+            ui->actionRecord->setEnabled(false);
+            ui->actionInfer->setEnabled(false);
+        }
+        ui->result->setStreaming(false);
+        ui->cameraController->setEnabled(true);
+        on_actionPlay_toggled(false);       
     }
 }
 
@@ -1369,9 +1407,7 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
 {
     if(!mCameraPtr || !mProcessorPtr)
     {
-        QMessageBox::critical(this, QCoreApplication::applicationName(),
-                              QObject::tr("No camera connected.\nor CUDA processor is not initialized."));
-
+        showStatus(tr("No camera connected."));
         QSignalBlocker b(ui->actionPlay);
         ui->actionPlay->setChecked(false);
         return;
@@ -1386,10 +1422,24 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         mRendererPtr->showImage();
 #endif
         if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            ui->result->setStreaming(false);
+            ui->result->clear();
+            ui->result->setStreaming(true);
             // nothing to do
         }else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
-            on_actionRecord_toggled(true);
-            on_actionInfer_toggled(true);
+            ui->result->setStreaming(false);
+            ui->result->clear();
+            ui->result->setStreaming(true);
+            {
+                QSignalBlocker b(ui->actionRecord);
+                ui->actionRecord->setChecked(true);
+                on_actionRecord_toggled(true);
+            }
+            {
+                QSignalBlocker b(ui->actionInfer);
+                ui->actionInfer->setChecked(true);
+                on_actionInfer_toggled(true);
+            }
         }else if(mInputMode == MODE_VIDEO){           
             // nothing to do
             if(ui->actionInfer->isChecked())
@@ -1400,24 +1450,44 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
                 ui->result->setStreaming(true);
             }
         }
-        mCameraPtr->start();
+        ui->cameraController->setEnabled(false);
         mProcessorPtr->start();
+        mCameraPtr->start();
     }
     else
     {
-        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
-            // nothing to do
-        }else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
-            on_actionRecord_toggled(false);
-            on_actionInfer_toggled(false);
-        }else if(mInputMode == MODE_VIDEO){           
-            // nothing to do
-        }
-
         mCameraPtr->stop();
         QThread::msleep(500);
         mProcessorPtr->stop();
         QThread::msleep(500);
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
+            {
+                QSignalBlocker b(ui->actionRecord);
+                ui->actionRecord->setChecked(false);
+                on_actionRecord_toggled(false);
+            }
+            {
+                QSignalBlocker b(ui->actionInfer);
+                ui->actionInfer->setChecked(false);
+                on_actionInfer_toggled(false);
+            }  
+            // on_actionInfer_toggled(false);
+            // nothing to do
+        }else if(mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER){
+            {
+                QSignalBlocker b(ui->actionInfer);
+                ui->actionInfer->setChecked(false);
+                on_actionInfer_toggled(false);
+            }   
+            {
+                QSignalBlocker b(ui->actionRecord);
+                ui->actionRecord->setChecked(false);
+                on_actionRecord_toggled(false);
+            }
+        }else if(mInputMode == MODE_VIDEO){           
+            // nothing to do
+        }
+        ui->cameraController->setEnabled(true);
     }
 }
 
@@ -1437,12 +1507,24 @@ void MainWindow::on_actionInfer_toggled(bool checked)
         mOptions.Infer = true;
         mProcessorPtr->updateOptions(mOptions);
         mProcessorPtr->startInfer();
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER)
+        {            
+            QSignalBlocker b(ui->actionRecord);
+            ui->actionRecord->setChecked(true);
+            on_actionRecord_toggled(true);
+        }
     }
     else
     {
         mOptions.Infer = false;
         mProcessorPtr->updateOptions(mOptions);
         mProcessorPtr->stopInfer();
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER)
+        {            
+            QSignalBlocker b(ui->actionRecord);
+            ui->actionRecord->setChecked(false);
+            on_actionRecord_toggled(false);
+        }
     }
 }
 
@@ -1497,8 +1579,13 @@ void setBitrate(QComboBox* cb, int bitrate)
 
 void MainWindow::on_actionClose_triggered()
 {
+    {
+        QSignalBlocker b(ui->actionPlay);
+        ui->actionPlay->setChecked(false);
+        QThread::msleep(1000);
+        on_actionPlay_toggled(false);
+    }
 
-    on_actionPlay_toggled(false);
     QThread::msleep(1000);
     if(mCameraPtr)
     {
@@ -1549,7 +1636,7 @@ void MainWindow::on_actionClose_triggered()
 
     ui->actionPlay->setEnabled(false);
     ui->actionInfer->setEnabled(false);
-
+    ui->cameraController->setEnabled(false);
 }
 
 void MainWindow::onModeChanged(INPUT_MODE mode)
@@ -1560,6 +1647,26 @@ void MainWindow::onModeChanged(INPUT_MODE mode)
     {
         mInputMode = mode;
         qDebug("mInputMode:%d", mInputMode);
+        if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER)
+        {
+            ui->actionInfer->setEnabled(true);
+            QSignalBlocker b(ui->actionInfer);
+            ui->actionInfer->setChecked(false);
+            on_actionInfer_toggled(false);
+        }
+        else if (mInputMode == MODE_CAMERA_EXTERNAL_TRIGGER)
+        {
+            QSignalBlocker b(ui->actionInfer);
+            ui->actionInfer->setChecked(false);
+            on_actionInfer_toggled(false);
+            ui->actionInfer->setEnabled(false);
+        }
+    }
+    else
+    {
+        mInputMode = MODE_VIDEO;
+        ui->actionInfer->setEnabled(true);
+        ui->actionInfer->setChecked(false);
     }
             
 

@@ -40,7 +40,7 @@ AsyncWriter::AsyncWriter(int size, QObject *parent):
 {
     mWorkThread.setObjectName(QStringLiteral("File Writer Thread"));
     moveToThread(&mWorkThread);
-
+    qDebug("AsyncWriter::AsyncWriter");
     mWorkThread.start();
     start();
 }
@@ -168,7 +168,7 @@ AsyncFileWriter::AsyncFileWriter(int size, QObject *parent):
     mMaxSize = size;
     mWorkThread.setObjectName(QStringLiteral("File Writer Thread"));
     moveToThread(&mWorkThread);
-
+    qDebug("AsyncFileWriter::AsyncFileWriter");
     mWorkThread.start();
     start();
 }
@@ -201,7 +201,7 @@ AsyncMJPEGWriter::AsyncMJPEGWriter(int size, QObject *parent):
     mMaxSize = size;
     mWorkThread.setObjectName(QStringLiteral("MJPEG Writer Thread"));
     moveToThread(&mWorkThread);
-
+    qDebug("AsyncMJPEGWriter::AsyncMJPEGWriter");
     mWorkThread.start();
     start();
 }
@@ -246,7 +246,7 @@ AsyncRawWriter::AsyncRawWriter(int size, QObject *parent):
     mMaxSize = size;
     mWorkThread.setObjectName(QStringLiteral("Raw Writer Thread"));
     moveToThread(&mWorkThread);
-
+    qDebug("AsyncRawWriter::AsyncRawWriter");
     mWorkThread.start();
     start();
 }
@@ -255,16 +255,38 @@ bool AsyncRawWriter::open(const QString& outFileName)
 {
     if(!QFileInfo::exists(QFileInfo(outFileName).path()))
         return false;
-    mFile = std::ofstream(outFileName.toStdString(), std::ios::binary);
-    if (!mFile.is_open())
-        return false;
+
+    #ifdef _WIN32
+        errno_t err;
+        err = fopen_s(&mfile,outFileName.toStdString().c_str(),"wb");
+        if (err != 0) {
+            qDebug("Error opening file\n");
+            fclose(mfile);
+            mfile=nullptr;
+            return false;
+        }
+        else
+        {
+            qDebug("load video success\n");
+        }
+    #else
+        mfile = fopen(outFileName.toStdString().c_str(), "rb");
+        if(mfile == NULL)
+        {
+            qDebug("Error opening file\n");
+            fclose(mfile);
+            mfile=nullptr;
+            return false;
+        }
+    #endif
+
     return true;
 }
 
 void AsyncRawWriter::close()
 {
-    if (mFile.is_open())
-        mFile.close();
+    if(mfile)
+        fclose(mfile);
 }
 
 void AsyncRawWriter::processTask(FileWriterTask* task)
@@ -272,5 +294,9 @@ void AsyncRawWriter::processTask(FileWriterTask* task)
     if(task == nullptr)
         return;
 
-    mFile.write((char*)task->data, task->size);
+    size_t result = fwrite(task->data, 1, task->size, mfile);
+    // qDebug("Write %p , %d bytes", task->data,task->size);
+    if (result != task->size) {
+        qDebug("Failed to write data");
+    }
 }

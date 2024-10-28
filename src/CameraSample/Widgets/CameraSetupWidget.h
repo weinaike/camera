@@ -63,7 +63,7 @@ signals:
 private slots:
     void on_spnFrameRate_valueChanged(double arg1);
     void on_spnExposureTime_valueChanged(int arg1);
-    void onCameraStateChanged(GPUCameraBase::cmrCameraState newState);
+
     void on_radioButton_int_clicked(bool checked);
 
     void on_radioButton_ext_clicked(bool checked);
@@ -71,6 +71,8 @@ private slots:
     void on_pushButton_toFile_clicked();
 
     void on_pushButton_toDev_clicked();
+
+    void on_lineEdit_frames_editingFinished();
 
 private:
     Ui::CameraSetupWidget *ui;

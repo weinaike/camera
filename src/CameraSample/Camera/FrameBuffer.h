@@ -59,6 +59,15 @@ public:
     int pitch();
     size_t size();
     fastSurfaceFormat_t surfaceFmt();
+    int init(){ 
+        QMutexLocker lock(&mMutex);
+        mRead =0;
+        mWritten = 0;
+        mCurrent = 0;
+        mLast = -1;
+        mDropped = 0;
+        return 0;
+    }
 
 signals:
 

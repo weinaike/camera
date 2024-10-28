@@ -44,7 +44,7 @@
 #include "ControlData.h"
 #include "PublicPipeline.h"
 #include "WeldData.h"
-#include "snap7.h"
+#include "AsyncControl.h"
 
 class CUDAProcessorBase;
 class CircularBuffer;
@@ -74,9 +74,10 @@ public:
     void startInfer();
     void stopInfer();
 
-    int startControl(const char * ip, int rack, int slot );
-    int stopControl();
+    int connectPLC(const char * ip, int rack, int slot);
+    int disconnectPLC();
     bool isControl(){return mControl;}
+    void setControl_DB(int db){mDBID = db;}
 
     void setOutputPath(const QString& path){mOutputPath = path;}
     void setFilePrefix(const QString& prefix){mFilePrefix = prefix;}
@@ -103,7 +104,7 @@ private:
 
     QScopedPointer<CUDAProcessorBase> mProcessorPtr;
     QScopedPointer<AsyncWriter>       mFileWriterPtr;
-    TS7Client *          plcClient = nullptr;
+    QScopedPointer<AsyncControl>      mControlPtr;
 
     QMutex               mWaitMutex;
     QWaitCondition       mWaitCond;
@@ -118,6 +119,8 @@ private:
     QString              mUrl;
 
     std::shared_ptr<ZJVIDEO::PublicPipeline> mPipe;
+    int                 mDBID = 0;
+    char                mIP[32] = {0};
 
     void startWorking();
 };

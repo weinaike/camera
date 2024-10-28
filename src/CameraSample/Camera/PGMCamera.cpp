@@ -44,7 +44,7 @@ PGMCamera::PGMCamera(const QString &fileName,
     mCameraThread.setObjectName(QStringLiteral("PGMCameraThread"));
     moveToThread(&mCameraThread);
     mCameraThread.start();
-    qRegisterMetaType<GPUCameraBase::cmrCameraState>("GPUCameraBase::cmrCameraState");
+    
 }
 
 struct ImageData {
@@ -239,6 +239,7 @@ bool PGMCamera::start()
 {
     mState = cstStreaming;
     emit stateChanged(cstStreaming);
+    mInputBuffer.init();
     QTimer::singleShot(0, this, [this](){startStreaming();});
     return true;
 }
@@ -340,7 +341,7 @@ bool PGMCamera::getParameter(cmrCameraParameter param, float& val)
         return true;
 
     case prmExposureTime:
-        val = 1000 / mFPS;
+        val = 1000000 / mFPS ;
         return true;
 
     default:

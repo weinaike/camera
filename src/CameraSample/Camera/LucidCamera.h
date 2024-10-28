@@ -21,7 +21,7 @@ public:
     virtual bool getParameter(cmrCameraParameter param, float& val);
     virtual bool setParameter(cmrCameraParameter param, float val);
     virtual bool getParameterInfo(cmrParameterInfo& info);
-
+    virtual bool getParameter(cmrCameraParameter param, std::string& val);
 
     int WriteStreamables(std::string);
     int ReadStreamables(std::string);
@@ -32,7 +32,7 @@ private:
     void startStreaming();
     Arena::ISystem* mSystem = nullptr;
     Arena::IDevice* mDevice = nullptr;
-
+    int mAcqFrameCount = 0;
     void UpdateStatistics(Arena::IImage *pImage);
 
 

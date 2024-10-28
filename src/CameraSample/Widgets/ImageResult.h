@@ -79,8 +79,6 @@ private slots:
     // void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
     void on_data_changed(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());
 
-    void on_checkBox_control_stateChanged(int arg1);
-
     void on_checkBox_control_clicked(bool checked);
 
     void on_checkBox_label_clicked(bool checked);

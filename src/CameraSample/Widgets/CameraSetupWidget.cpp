@@ -31,6 +31,7 @@
 #include <QFileDialog>
 #include <QString>
 #include <QMessageBox>
+#include <fstream>
 
 CameraSetupWidget::CameraSetupWidget(QWidget *parent) :
     QWidget(parent),
@@ -41,6 +42,9 @@ CameraSetupWidget::CameraSetupWidget(QWidget *parent) :
     ui->spnExposureTime->setEnabled(false);
     ui->radioButton_ext->setCheckable(false);
     ui->radioButton_int->setCheckable(false);
+
+    ui->lineEdit_frames->setValidator(new QIntValidator(0, 1000000, this));
+    ui->lineEdit_frames->setEnabled(false);
 }
 
 CameraSetupWidget::~CameraSetupWidget()
@@ -48,40 +52,83 @@ CameraSetupWidget::~CameraSetupWidget()
     delete ui;
 }
 
-void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
+void CameraSetupWidget::setCamera(GPUCameraBase *cameraPtr)
 {
     mCameraPtr = cameraPtr;
 
-    if(mCameraPtr != nullptr)
+    if (mCameraPtr != nullptr)
     {
         qDebug("Camera ID: %d\n", cameraPtr->devID());
-        if(cameraPtr->devID() < 0)
+        if (cameraPtr->devID() < 0)
         {
             ui->radioButton_ext->setCheckable(false);
             ui->radioButton_int->setCheckable(false);
         }
         else
         {
-            ui->radioButton_ext->setCheckable(true);    
-            ui->radioButton_int->setCheckable(true);             
+            ui->radioButton_ext->setCheckable(true);
+            ui->radioButton_int->setCheckable(true);
+            ui->lineEdit_frames->setEnabled(true);
+            std::ifstream ifs("config.txt");
+            if (ifs)
             {
-                QSignalBlocker b(ui->radioButton_int);            
-                ui->radioButton_int->setChecked(true);
+                std::string str;
+                ifs >> str;
+                ifs.close();
+                ui->lineEdit_frames->setText(QString::fromStdString(str));
             }
             
+            float val = 0;
+            bool ret = cameraPtr->getParameter(GPUCameraBase::prmTriggerMode, val);
+            if (ret == false)
+            {
+                QMessageBox::warning(this, "Error", "Failed to get trigger mode");
+            }
+            if (int(val) == 1)
+            {
+                QSignalBlocker b(ui->radioButton_ext);
+                ui->radioButton_ext->setChecked(true);
+                emit modeChanged(INPUT_MODE::MODE_CAMERA_EXTERNAL_TRIGGER);
+                cameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, ui->lineEdit_frames->text().toInt());
+            }
+            else
+            {
+                QSignalBlocker b(ui->radioButton_int);
+                ui->radioButton_int->setChecked(true);
+                emit modeChanged(INPUT_MODE::MODE_CAMERA_INTERNAL_TRIGGER);
+                ui->lineEdit_frames->setText("0");
+                cameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, 0);
+            }
+
             ui->label_ip->setText(cameraPtr->ipAddress());
             ui->label_mac->setText(cameraPtr->macAddress());
             ui->label_gateway->setText(cameraPtr->gateway());
             ui->label_subnet->setText(cameraPtr->subnetMask());
+
+            std::string str;
+            ret = cameraPtr->getParameter(GPUCameraBase::prmTriggerSource, str);
+            if (ret == false)
+            {
+                ui->label_source->setText("Unknown");
+            }
+            else
+            {
+                ui->label_source->setText(QString::fromStdString(str));
+            }
+            ret = cameraPtr->getParameter(GPUCameraBase::prmTriggerSelector, str);
+            if (ret == false)
+            {
+                ui->label_selector->setText("Unknown");
+            }
+            else
+            {
+                ui->label_selector->setText(QString::fromStdString(str));
+            }
         }
         ui->spnFrameRate->setEnabled(true);
         ui->spnExposureTime->setEnabled(true);
 
-        connect(mCameraPtr, SIGNAL(stateChanged(GPUCameraBase::cmrCameraState)),
-                this, SLOT(onCameraStateChanged(GPUCameraBase::cmrCameraState)));
-
         GPUCameraBase::cmrParameterInfo info(GPUCameraBase::prmExposureTime);
-        
 
         mCameraPtr->getParameterInfo(info);
         {
@@ -90,7 +137,7 @@ void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
             // ui->spnExposureTime->setMinimum(info.min);
             // ui->spnExposureTime->setSingleStep(info.increment);
             float val = 0;
-            if(mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
+            if (mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
             {
                 ui->spnExposureTime->setValue((int)val);
             }
@@ -104,12 +151,11 @@ void CameraSetupWidget::setCamera(GPUCameraBase* cameraPtr)
             // ui->spnFrameRate->setMinimum(info.min);
             // ui->spnFrameRate->setSingleStep(info.increment);
             float val = 0;
-            if(mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
+            if (mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
             {
                 ui->spnFrameRate->setValue((double)val);
             }
         }
-
     }
 }
 
@@ -125,17 +171,16 @@ void CameraSetupWidget::setFpsCamera(float value)
 
 void CameraSetupWidget::on_spnFrameRate_valueChanged(double arg1)
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
-    if(mCameraPtr->state() == GPUCameraBase::cstClosed)
+    if (mCameraPtr->state() == GPUCameraBase::cstClosed)
         return;
 
     mCameraPtr->setParameter(GPUCameraBase::prmFrameRate, arg1);
 
-
     QSignalBlocker b(ui->spnExposureTime);
     float val = 0;
-    if(mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
+    if (mCameraPtr->getParameter(GPUCameraBase::prmExposureTime, val))
     {
         ui->spnExposureTime->setValue((int)val);
     }
@@ -143,111 +188,141 @@ void CameraSetupWidget::on_spnFrameRate_valueChanged(double arg1)
 
 void CameraSetupWidget::on_spnExposureTime_valueChanged(int arg1)
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
 
-    if(mCameraPtr->state() == GPUCameraBase::cstClosed)
+    if (mCameraPtr->state() == GPUCameraBase::cstClosed)
         return;
 
     mCameraPtr->setParameter(GPUCameraBase::prmExposureTime, arg1);
 
     QSignalBlocker b1(ui->spnFrameRate);
     float val = 0;
-    if(mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
+    if (mCameraPtr->getParameter(GPUCameraBase::prmFrameRate, val))
     {
         ui->spnFrameRate->setValue((double)val);
     }
 }
 
-void CameraSetupWidget::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
-{
-    if(newState == GPUCameraBase::cstClosed)
-    {
-        ui->spnFrameRate->setEnabled(false);
-        ui->spnExposureTime->setEnabled(false);
-        ui->radioButton_ext->setEnabled(false);
-        ui->radioButton_int->setEnabled(false);
-    }
-    else
-    {
-        ui->spnFrameRate->setEnabled(true);
-        ui->spnExposureTime->setEnabled(true);
-        ui->radioButton_ext->setEnabled(true);
-        ui->radioButton_int->setEnabled(true);
-    }
-//    else if(newState == CameraBase::cstStopped)
-//    {
-
-//    }
-//    else if(newState == CameraBase::cstStreaming)
-//    {
-
-//    }
-}
 
 void CameraSetupWidget::on_radioButton_int_clicked(bool checked)
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
-    if(mCameraPtr->devID() < 0)
+    if (mCameraPtr->devID() < 0)
         return;
-    emit modeChanged(INPUT_MODE::MODE_CAMERA_INTERNAL_TRIGGER);
+    bool ret = mCameraPtr->setParameter(GPUCameraBase::prmTriggerMode, 0);
+    if (ret == false)
+    {
+        QMessageBox::warning(this, "Error", "Failed to set trigger mode");
+    }
+    else
+    {
+        ui->lineEdit_frames->setText("0");
+        mCameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, 0);
+        emit modeChanged(INPUT_MODE::MODE_CAMERA_INTERNAL_TRIGGER);
+    }
 }
-
 
 void CameraSetupWidget::on_radioButton_ext_clicked(bool checked)
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
-    if(mCameraPtr->devID() < 0)
+    if (mCameraPtr->devID() < 0)
         return;
-    emit modeChanged(INPUT_MODE::MODE_CAMERA_EXTERNAL_TRIGGER);
-}
+    bool ret = mCameraPtr->setParameter(GPUCameraBase::prmTriggerMode, 1);
+    if (ret == false)
+    {
+        QMessageBox::warning(this, "Error", "Failed to set trigger mode");
+    }
+    else
+    {
+        std::ifstream ifs("config.txt");
+        if (ifs)
+        {
+            std::string str;
+            ifs >> str;
+            ifs.close();
+            ui->lineEdit_frames->setText(QString::fromStdString(str));
+        }
+        mCameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, ui->lineEdit_frames->text().toInt());
 
+        emit modeChanged(INPUT_MODE::MODE_CAMERA_EXTERNAL_TRIGGER);
+    }
+}
 
 void CameraSetupWidget::on_pushButton_toFile_clicked()
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
-    if(mCameraPtr->devID() < 0)
+    if (mCameraPtr->devID() < 0)
         return;
-    
+
     // 打开保存文件对话框
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "features.txt",
                                                     tr("Text Files (*.txt)"));
-    if (fileName.isEmpty()) {
+    if (fileName.isEmpty())
+    {
         qDebug("User cancelled the dialog or no file was selected.");
-    } else {
+    }
+    else
+    {
         qDebug("Save to file: %s\n", fileName.toStdString().c_str());
         // 在这里处理用户选择的文件路径，例如保存文件
         int ret = mCameraPtr->WriteStreamables(fileName.toStdString());
-        if(ret < 0)
+        if (ret < 0)
         {
             // 弹出错误对话框
-            QMessageBox::critical(this, tr("Error"), tr("Failed to save the file. Error code: %1").arg(ret));                        
+            QMessageBox::critical(this, tr("Error"), tr("Failed to save the file. Error code: %1").arg(ret));
         }
     }
-
 }
-
 
 void CameraSetupWidget::on_pushButton_toDev_clicked()
 {
-    if(mCameraPtr == nullptr)
+    if (mCameraPtr == nullptr)
         return;
-    if(mCameraPtr->devID() < 0)
+    if (mCameraPtr->devID() < 0)
         return;
-    
+
     // 打开保存文件对话框
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "features.txt",
                                                     tr("Text Files (*.txt)"));
     qDebug("load to device from: %s\n", fileName.toStdString().c_str());
     int ret = mCameraPtr->ReadStreamables(fileName.toStdString());
-    if(ret < 0)
+    if (ret < 0)
     {
         // 弹出错误对话框
-        QMessageBox::critical(this, tr("Error"), tr("Failed to load the file. Error code: %1").arg(ret));                        
+        QMessageBox::critical(this, tr("Error"), tr("Failed to load the file. Error code: %1").arg(ret));
     }
-
+    setCamera(mCameraPtr);
 }
 
+void CameraSetupWidget::on_lineEdit_frames_editingFinished()
+{
+    if (mCameraPtr)
+    {
+        if (ui->radioButton_ext->isChecked())
+        {
+            if (ui->lineEdit_frames->text().toInt() == 0)
+            {
+                QMessageBox::warning(this, "Error", "Frame count must be greater than 0");
+                ui->lineEdit_frames->setText("1");
+                mCameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, 1);
+                return;
+            }
+            mCameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, ui->lineEdit_frames->text().toInt());
+            std::ofstream ofs("config.txt");
+            if (!ofs)
+            {
+                qDebug("open file fail");
+            }
+            ofs << ui->lineEdit_frames->text().toStdString();
+            ofs.close();
+        }
+        else
+        {
+            mCameraPtr->setParameter(GPUCameraBase::prmAcqFrameCount, ui->lineEdit_frames->text().toInt());
+        }
+    }
+}

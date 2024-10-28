@@ -57,6 +57,7 @@ RawProcessor::RawProcessor(GPUCameraBase *camera, GLRenderer *renderer):QObject(
     mCUDAThread.setObjectName(QStringLiteral("CUDAThread"));
     moveToThread(&mCUDAThread);
     mCUDAThread.start();
+    mControlPtr.reset(new AsyncControl(32));
 }
 
 
@@ -67,13 +68,13 @@ RawProcessor::RawProcessor(GPUCameraBase *camera):QObject(nullptr),
         mProcessorPtr.reset(new CUDAProcessorBase());
     else
         mProcessorPtr.reset(new CUDAProcessorGray());
-    qDebug("camera->isColor():%d", camera->isColor());
+
     connect(mProcessorPtr.data(), SIGNAL(error()), this, SIGNAL(error()));
 
     mCUDAThread.setObjectName(QStringLiteral("CUDAThread"));
     moveToThread(&mCUDAThread);
     mCUDAThread.start();
-
+    mControlPtr.reset(new AsyncControl(32));
 }
 
 
@@ -89,12 +90,11 @@ RawProcessor::~RawProcessor()
         tm.start();
         while(tm.elapsed() <= 1000){};
     }
-    if(plcClient)
+    if(mControl)
     {
-        plcClient->Disconnect();
-        delete plcClient;
-        plcClient = nullptr;
+        mControlPtr->disconnect();
     }
+    mControlPtr.reset(nullptr);
     mCUDAThread.quit();
     mCUDAThread.wait(3000);
 }
@@ -102,8 +102,7 @@ RawProcessor::~RawProcessor()
 fastStatus_t RawProcessor::init()
 {
     if(!mProcessorPtr)
-        return FAST_INVALID_VALUE;
-    plcClient = new TS7Client();
+        return FAST_INVALID_VALUE;    
     return mProcessorPtr->Init(mOptions);
 }
 
@@ -169,7 +168,20 @@ void RawProcessor::startWorking()
     int bpc = GetBitsPerChannelFromSurface(mCamera->surfaceFormat());
     int maxVal = (1 << bpc) - 1;
     QString pgmHeader = QString("P5\n%1 %2\n%3\n").arg(mOptions.Width).arg(mOptions.Height).arg(maxVal);
-    qDebug() << "startWorking: " << pgmHeader;
+
+    if(mControl)
+    {
+        if(!mControlPtr->get_connect_status())
+        {
+            mControlPtr->connect(mIP, 0, 2);
+            mControlPtr->stop();
+            mControlPtr->start();
+        }
+        if(!mControlPtr->get_status())
+        {
+            mControlPtr->start();
+        }
+    }
 
     mWake = false;
     qint64 previous = tm.elapsed();
@@ -185,21 +197,18 @@ void RawProcessor::startWorking()
         mWake = false;
         if(!mWorking)
         {
-            printf("mWorking = false");
             break;
         }
            
 
         if(!mProcessorPtr || mCamera == nullptr)
         {
-            printf("(!mProcessorPtr || mCamera == nullptr");
             continue;
         }
 
         GPUImage_t* img = mCamera->getFrameBuffer()->getLastImage();
         if(!img)
         {
-            printf("(!img)");
             continue;
         }
 
@@ -250,23 +259,19 @@ void RawProcessor::startWorking()
                             // mPipe->show_debug_info();
                             // printf("WeldResult:     frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f\n", 
                             //     weld->frame_id, weld->camera_id, weld->weld_status, weld->status_score, weld->weld_depth, weld->front_quality, weld->back_quality);
+
+
+                            if(mControl)
+                            {
+                                // 将功率值写入 PLC 的寄存器，假设我们使用 DB1.DBW0（根据你的配置） 
+                                mControlPtr->put(weld_result, mDBID);
+                            }
                         }                
                     }
                 }            
             }
 
-            if(mControl)
-            {
-                // 将功率值写入 PLC 的寄存器，假设我们使用 DB1.DBW0（根据你的配置）
-                uint16_t valueToWrite = 100;
 
-                int result = plcClient->WriteArea(S7AreaDB, 1, 0, sizeof(valueToWrite), S7WLWord, &valueToWrite);
-                if (result == 0) {
-                    qDebug() << "Laser power set to" << valueToWrite << "%.";                    
-                } else {
-                    qDebug() << "Failed to set laser power.";
-                }
-            }
         }
 
         // 显示
@@ -371,11 +376,16 @@ void RawProcessor::startWorking()
             }
             else if(mOptions.Codec == CUDAProcessorOptions::vcRAW)
             {
+                // qDebug("vcRAW");
+                unsigned int bpc = GetBytesPerChannelFromSurface(mOptions.SurfaceFmt);
+                // qDebug("width: %d , height:%d , bpc:%d, all:%d", mOptions.Width, mOptions.Height, bpc, mFileWriterPtr->bufferSize());
                 unsigned char* buf = mFileWriterPtr->getBuffer();
                 if(buf != nullptr)
                 {
                     FileWriterTask* task = new FileWriterTask();
-                    task->size = mFileWriterPtr->bufferSize();
+                    task->size = mOptions.Width * mOptions.Height * bpc; 
+                    memcpy(buf, mProcessorPtr->GetFrameBuffer(), task->size);                   
+                    
                     task->data = buf;
                     mFileWriterPtr->put(task);
                     mFileWriterPtr->wake();
@@ -392,6 +402,10 @@ void RawProcessor::startWorking()
             float avg = (float)(now-previous) / frameCount;
             qDebug("avg time: %f\n", avg);
         }
+    }
+    if(mControl)
+    {
+        mControlPtr->stop();
     }
     mWorking = false;
 }
@@ -445,7 +459,8 @@ QString RawProcessor::startWriting()
 {
     if(mCamera == nullptr)
         return ".";
-
+    if(mWriting)
+        stopWriting();
     mWriting = false;
     if(QFileInfo(mOutputPath).exists())
     {
@@ -488,12 +503,13 @@ QString RawProcessor::startWriting()
         mFileWriterPtr.reset(writer);
     }
     else
+    {
         mFileWriterPtr.reset(new AsyncFileWriter());
-
+    }
     unsigned pitch = 3 *(((mOptions.Width + FAST_ALIGNMENT - 1) / FAST_ALIGNMENT ) * FAST_ALIGNMENT);
     unsigned sz = pitch * mOptions.Height;
     mFileWriterPtr->initBuffers(sz);
-
+        
     mFrameCnt = 0;
     mWriting = true;
     return fileName;
@@ -528,6 +544,9 @@ void RawProcessor::stopWriting()
 
 void RawProcessor::startInfer()
 {
+    if(mInfer)
+        return;
+
     mInfer = false;
 
     std::string cfg_file = "../configure/pipeline_welding.json";
@@ -564,11 +583,17 @@ void RawProcessor::stopInfer()
     mPipe.reset();
 }
 
-int RawProcessor::startControl(const char * ip, int rack, int slot)
+int RawProcessor::connectPLC(const char * ip, int rack, int slot)
 {
-    // 设置 PLC 地址（根据你的配置）
-    int result = plcClient->ConnectTo(ip, rack, slot);  // IP 地址, Rack, Slot
-    if (result == 0) {
+    strncpy_s(mIP, ip, sizeof(mIP) - 1);
+    // 确保字符串以 null 结尾
+    mIP[sizeof(mIP) - 1] = '\0';
+
+    if(mControlPtr == nullptr)
+        return -1;
+    int ret = mControlPtr->connect(ip, rack, slot);
+
+    if (ret == 0) {
         qDebug() << "Connected to PLC successfully.";
         mControl = true;
     } else {
@@ -576,16 +601,17 @@ int RawProcessor::startControl(const char * ip, int rack, int slot)
         mControl = false;
         return -1;
     }
+
+    mControlPtr->start();
+
     return 0;
     
 }
 
-int RawProcessor::stopControl()
+int RawProcessor::disconnectPLC()
 {
-    if(plcClient)
-    {
-        plcClient->Disconnect();
-    }
+    mControlPtr->disconnect();
+    qDebug() << "Disconnected from PLC.";
     mControl = false;
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <QElapsedTimer>
 
 #include <RawProcessor.h>
+#include <QMessageBox>
 
 using CameraStatEnum = GPUCameraBase::cmrCameraStatistic;
 
@@ -13,6 +14,7 @@ LucidCamera::LucidCamera()
     mCameraThread.setObjectName(QStringLiteral("GeniCamThread"));
     moveToThread(&mCameraThread);
     mCameraThread.start();
+    qRegisterMetaType<CameraStatEnum>("CameraStatEnum");
 }
 
 LucidCamera::~LucidCamera()
@@ -25,6 +27,12 @@ LucidCamera::~LucidCamera()
 
 bool LucidCamera::open(int devID)
 {
+    if(devID < 0)
+    {
+        qDebug() << "Invalid device ID";
+        return false;
+    }
+        
     using namespace GenApi;
     std::vector<Arena::DeviceInfo> deviceInfos;
     Arena::DeviceInfo devInfo;
@@ -294,7 +302,8 @@ bool LucidCamera::open(int devID)
 
 bool LucidCamera::start()
 {
-    mState = cstStreaming;
+    mInputBuffer.init();
+    mState = cstStreaming;  
     emit stateChanged(cstStreaming);
     QTimer::singleShot(0, this, [this](){startStreaming();});
     return true;
@@ -313,7 +322,7 @@ void LucidCamera::close()
     stop();
     if(mSystem != nullptr)
     {
-        if(mDevice = nullptr)
+        if(mDevice == nullptr)
         {
             mSystem->DestroyDevice(mDevice);
             mDevice = nullptr;
@@ -335,6 +344,7 @@ void LucidCamera::startStreaming()
     GenICam::gcstring acquisitionModeInitial;
     try
     {
+        GenICam::gcstring triggerMode = Arena::GetNodeValue<GenICam::gcstring>(mDevice->GetNodeMap(), "TriggerMode");
         // get node values that will be changed in order to return their values at the end
         acquisitionModeInitial = Arena::GetNodeValue<GenICam::gcstring>(mDevice->GetNodeMap(), "AcquisitionMode");
 
@@ -394,18 +404,45 @@ void LucidCamera::startStreaming()
             Arena::SetNodeValue<bool>(mDevice->GetTLStreamNodeMap(), "StreamPacketResendEnable", true);
         }
 
+        // Arena::SetNodeValue<GenICam::gcstring>(mDevice->GetNodeMap(), "TriggerSource", "Software");
+        Arena::SetNodeValue<GenICam::gcstring>(mDevice->GetNodeMap(), "TriggerSelector", "AcquisitionStart");
+        qDebug() << "Trigger mode: " << triggerMode.c_str();
+        
         mDevice->StartStream();
         QElapsedTimer tmr;
+        UpdateStatistics(nullptr);
+        
+        if(triggerMode == "On")
+        {
+            bool triggerArmed = false;
+            do
+            {
+                triggerArmed = Arena::GetNodeValue<bool>(mDevice->GetNodeMap(), "TriggerArmed");
+            } while (triggerArmed == false && mState == cstStreaming);
+            qDebug() << "Trigger armed: " << triggerArmed; 
+            if(mAcqFrameCount == 0)
+            {
+                QMessageBox(QMessageBox::Warning, "Warning", "Acquisition frame count is zero. Please set a valid value.", QMessageBox::Ok).exec();
+            }
+        }
 
         // Reset the camera statistics
-        UpdateStatistics(nullptr);
 
-        while(mState == cstStreaming)
-        {
-            tmr.restart();
+        bool finished = false;
+        while(mState == cstStreaming && !finished)
+        {        
+            tmr.start();
+            Arena::IImage* pImage = nullptr;
+            try {
+                pImage = mDevice->GetImage(3000);
+            }              
+            catch (...)
+            {
+                qDebug() << "timeout";
+                continue;
 
-            Arena::IImage* pImage = mDevice->GetImage(3000);
-
+            }
+            
             UpdateStatistics(pImage);
 
             if(pImage->IsIncomplete())
@@ -424,6 +461,10 @@ void LucidCamera::startStreaming()
                 QMutexLocker l(&mLock);
                 mRawProc->acqTimeNsec = tmr.nsecsElapsed();
                 mRawProc->wake();
+                if((mStatistics[CameraStatEnum::statFramesTotal] > mAcqFrameCount) && (mAcqFrameCount > 0))
+                {
+                    finished = true;
+                }
             }
             mDevice->RequeueBuffer(pImage);
         }
@@ -436,7 +477,8 @@ void LucidCamera::startStreaming()
 
         // return nodes to their initial values
         Arena::SetNodeValue<GenICam::gcstring>(mDevice->GetNodeMap(), "AcquisitionMode", acquisitionModeInitial);
-
+        mState = cstStopped;
+        emit stateChanged(cstFinished);
     }
     catch (GenICam::GenericException& ge)
     {
@@ -515,12 +557,70 @@ bool LucidCamera::getParameter(cmrCameraParameter param, float& val)
         }
 
         break;
+    case prmTriggerMode:
+        {
+            GenICam::gcstring triggerMode = Arena::GetNodeValue<GenICam::gcstring>(nodeMap, "TriggerMode");
+            qDebug() << "Trigger mode: " << triggerMode.c_str();
+            if(triggerMode.empty())
+                return false;
+            // 判断字符串是否相等
+            if(triggerMode == "Off")            
+            {
+                val = 0;
+            }
+            else
+            {
+                val = 1;
+            }
 
+            return true;
+        }
+    case prmAcqFrameCount:
+    {        
+        val = mAcqFrameCount;
+        return true;
+    }
     default:
         break;
     }
 
     return false;
+}
+
+bool LucidCamera::getParameter(cmrCameraParameter param, std::string& val)
+{    
+    using namespace GenApi;
+
+    if(param < 0 || param > prmLast)
+        return false;
+
+    if(!mDevice)
+        return false;
+
+    CFloatPtr ptrFloat;
+    CIntegerPtr ptrInt;
+    INodeMap* nodeMap = mDevice->GetNodeMap();
+    switch (param)
+    {
+    case prmTriggerSource:
+    {
+        GenICam::gcstring triggerSource = Arena::GetNodeValue<GenICam::gcstring>(nodeMap, "TriggerSource");
+        if(triggerSource.empty())
+            return false;
+        val = triggerSource.c_str();
+        return true;
+    }
+    case prmTriggerSelector:
+    {
+        GenICam::gcstring triggerSelector = Arena::GetNodeValue<GenICam::gcstring>(nodeMap, "TriggerSelector");
+        if(triggerSelector.empty())
+            return false;
+        val = triggerSelector.c_str();
+        return true;
+    }
+    default:
+        break;
+    }
 }
 
 bool LucidCamera::setParameter(cmrCameraParameter param, float val)
@@ -594,6 +694,65 @@ bool LucidCamera::setParameter(cmrCameraParameter param, float val)
                     }
                 }
             }
+            return false;
+        }
+        case prmTriggerMode:
+        {
+            GenApi::CEnumerationPtr triggerMode = nodeMap->GetNode("TriggerMode");
+            if(IsAvailable(triggerMode) && IsWritable(triggerMode))
+            {
+                if(int(val) == 0)
+                {
+                    triggerMode->FromString("Off");
+                }
+                else
+                {
+                    triggerMode->FromString("On");
+                }
+                return true;
+            }
+            return false;
+        }
+        case prmAcqFrameCount:
+        {
+            mAcqFrameCount = int(val);
+            return true;
+        }
+        case prmTriggerSoftware:
+        {
+            try{
+                Arena::ExecuteNode(nodeMap, "TriggerSoftware");
+                return true;
+            }
+            catch(GenICam::GenericException &ex)
+            {
+                // Show error here
+                qDebug() << "GenericException: " << ex.GetDescription();
+            }   
+            return false;
+
+            // qDebug() << "Software trigger prmTriggerSoftware";
+            // GenApi::CCommandPtr triggerSoftware = nodeMap->GetNode("TriggerSoftware");
+  
+            // try            
+            // {
+            //     if(IsAvailable(triggerSoftware) && IsWritable(triggerSoftware))
+            //     { 
+            //         triggerSoftware->Execute();
+            //         qDebug() << "Software trigger executed";
+            //         return true;
+            //     }
+            //     else
+            //     {
+            //         qDebug() << "Software trigger not available";
+            //     }
+            // }
+            // catch(GenICam::GenericException &ex)
+            // {
+            //     // Show error here
+            //     qDebug() << "GenericException: " << ex.GetDescription();
+            // }           
+
             return false;
         }
         default:

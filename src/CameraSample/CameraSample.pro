@@ -27,6 +27,7 @@ SOURCES += main.cpp\
     Globals.cpp \
     AppSettings.cpp \
     Widgets/ImageResult.cpp \
+    Widgets/test.cpp \
     ppm.cpp \
     RawProcessor.cpp \
     AsyncFileWriter.cpp \
@@ -43,7 +44,10 @@ SOURCES += main.cpp\
     Widgets/camerastatistics.cpp \
     RtspServer/JpegEncoder.cpp \
     Widgets/customlabel.cpp \
-    snap7.cpp
+    snap7.cpp \
+    AsyncControl.cpp\
+    Widgets/test.cpp
+
 
 
 HEADERS  += MainWindow.h \
@@ -51,6 +55,7 @@ HEADERS  += MainWindow.h \
     Globals.h \
     AppSettings.h \
     Widgets/ImageResult.h \
+    Widgets/test.h \
     ppm.h \
     RawProcessor.h \
     AsyncFileWriter.h \
@@ -73,7 +78,9 @@ HEADERS  += MainWindow.h \
     RtspServer/JpegEncoder.h \
     version.h \
     Widgets/customlabel.h \
-    snap7.h
+    snap7.h \
+    AsyncControl.h \
+    Widgets/test.h
 
 win32{
     SOURCES +=  $$PWD/../../OtherLibs/FastvideoSDK/common/BaseAllocator.cpp \
@@ -171,7 +178,8 @@ FORMS    += MainWindow.ui \
     Widgets/DenoiseController.ui \
     Widgets/CameraSetupWidget.ui \
     Widgets/ImageResult.ui \
-    Widgets/camerastatistics.ui
+    Widgets/camerastatistics.ui \
+    Widgets/test.ui
 
 
 RC_FILE = gpu-camera-sample.rc

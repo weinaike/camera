@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>241</width>
-    <height>260</height>
+    <width>258</width>
+    <height>294</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,6 +20,37 @@
    <string>Dialog</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Save Parameters</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="pushButton_toFile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;若需详细配置相机参数，请通过ArenaView配置&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>从相机到文件</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>Load Parameters</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QPushButton" name="pushButton_toDev">
+     <property name="text">
+      <string>从文件到相机</string>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_2">
      <property name="sizePolicy">
@@ -33,6 +64,22 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSpinBox" name="spnExposureTime">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="maximum">
+      <number>1000000000</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
      </property>
     </widget>
    </item>
@@ -52,15 +99,37 @@
      </property>
     </widget>
    </item>
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="spnFrameRate">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="minimum">
+      <double>0.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>200.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="stepType">
+      <enum>QAbstractSpinBox::DefaultStepType</enum>
+     </property>
+    </widget>
+   </item>
    <item row="5" column="0">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>camera run mode</string>
+      <string>Trigger Mode</string>
      </property>
     </widget>
    </item>
    <item row="5" column="1">
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QRadioButton" name="radioButton_int">
        <property name="text">
@@ -86,39 +155,24 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="1">
-    <widget class="QSpinBox" name="spnExposureTime">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="maximum">
-      <number>1000000000</number>
-     </property>
-     <property name="singleStep">
-      <number>1</number>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="spnFrameRate">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="minimum">
-      <double>0.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>200.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>1.000000000000000</double>
-     </property>
-     <property name="stepType">
-      <enum>QAbstractSpinBox::DefaultStepType</enum>
-     </property>
-    </widget>
-   </item>
    <item row="6" column="0">
+    <widget class="QLabel" name="label_10">
+     <property name="text">
+      <string>Acquisition Frames</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QLineEdit" name="lineEdit_frames">
+     <property name="text">
+      <string>2000</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
       <string>IP Address</string>
@@ -131,14 +185,14 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
+   <item row="7" column="1">
     <widget class="QLabel" name="label_ip">
      <property name="text">
       <string/>
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
+   <item row="8" column="0">
     <widget class="QLabel" name="label_6">
      <property name="text">
       <string>Mac Address</string>
@@ -151,14 +205,14 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
+   <item row="8" column="1">
     <widget class="QLabel" name="label_mac">
      <property name="text">
       <string/>
      </property>
     </widget>
    </item>
-   <item row="8" column="0">
+   <item row="9" column="0">
     <widget class="QLabel" name="label_8">
      <property name="text">
       <string>Subnet Mask</string>
@@ -171,7 +225,14 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="0">
+   <item row="9" column="1">
+    <widget class="QLabel" name="label_subnet">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
     <widget class="QLabel" name="label_9">
      <property name="text">
       <string>Default Gateway</string>
@@ -184,48 +245,38 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="1">
-    <widget class="QLabel" name="label_subnet">
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="1">
+   <item row="10" column="1">
     <widget class="QLabel" name="label_gateway">
      <property name="text">
       <string/>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="pushButton_toFile">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;若需详细配置相机参数，请通过ArenaView配置&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
+   <item row="11" column="0">
+    <widget class="QLabel" name="label_11">
      <property name="text">
-      <string>从相机到文件</string>
+      <string>TriggerSource</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QPushButton" name="pushButton_toDev">
+   <item row="11" column="1">
+    <widget class="QLabel" name="label_source">
      <property name="text">
-      <string>从文件到相机</string>
+      <string/>
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_5">
+   <item row="12" column="0">
+    <widget class="QLabel" name="label_13">
      <property name="text">
-      <string>Save Parameters</string>
+      <string>TriggerSelector</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_7">
+   <item row="12" column="1">
+    <widget class="QLabel" name="label_selector">
      <property name="text">
-      <string>Load Parameters</string>
+      <string/>
      </property>
     </widget>
    </item>

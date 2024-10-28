@@ -67,12 +67,18 @@ public:
     typedef enum{
         cstClosed = 0,
         cstStopped,
-        cstStreaming
+        cstStreaming,
+        cstFinished,
     } cmrCameraState;
     
     typedef enum{
         prmFrameRate = 0,
         prmExposureTime,
+        prmTriggerMode,
+        prmAcqFrameCount,
+        prmTriggerSoftware,
+        prmTriggerSource,
+        prmTriggerSelector,
         prmLast
     } cmrCameraParameter;
 
@@ -87,7 +93,10 @@ public:
         statVideoAllFrames /// frame of video
     } ;
     
-    
+    typedef enum{
+        triggerModeOFF = 0,
+        triggerModeON,
+    } cmrTriggerMode;
 
 
     struct cmrParameterInfo{
@@ -95,6 +104,7 @@ public:
         float min;
         float max;
         float increment;
+        int   trigger_mode;
 
         cmrParameterInfo(){}
         cmrParameterInfo(cmrCameraParameter p){param = p;}
@@ -124,8 +134,10 @@ public:
     ///Get camera parameter information. Return true on success, false otherwise.
     virtual bool getParameterInfo(cmrParameterInfo& info) = 0;
 
-    virtual int WriteStreamables(std::string){return 0;};
-    virtual int ReadStreamables(std::string ){return 0;};
+    virtual int WriteStreamables(std::string){return 0;}
+    virtual int ReadStreamables(std::string ){return 0;}
+
+    virtual bool getParameter(cmrCameraParameter param, std::string& val){return false;}
 
     ///Get current camera state
     cmrCameraState state() {return mState;}

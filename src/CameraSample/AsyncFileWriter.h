@@ -38,7 +38,7 @@
 #include "MallocAllocator.h"
 #include "MJPEGEncoder.h"
 #include <memory>
-#include <fstream>
+#include <stdio.h>
 
 struct FileWriterTask
 {
@@ -139,7 +139,7 @@ public:
 protected:
     virtual void processTask(FileWriterTask* task);
 private:
-    std::ofstream mFile;
+    FILE *mfile = nullptr;
 };
 
 #endif // ASYNCJPEGWRITER_H

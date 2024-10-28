@@ -90,6 +90,16 @@ public:
             return i;
         }
 
+        void copy(std::vector<T>& vec)
+        {
+            QMutexLocker lock(&mMutex);
+            vec.clear();
+            for(auto i : mQueue)
+            {
+                vec.push_back(i);
+            }
+        }
+
     private:
 
         QQueue<T> mQueue;

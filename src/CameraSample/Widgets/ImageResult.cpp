@@ -48,6 +48,9 @@ ImageResult::ImageResult(QWidget *parent) :
     mTimer.setInterval(200);
 
     ui->checkBox_control->setEnabled(false);
+    ui->lineEdit_ip->setEnabled(false);
+    ui->lineEdit_DB->setEnabled(false);
+
     ui->checkBox_label->setEnabled(false);
     ui->lineEdit_label_step->setEnabled(false);
 
@@ -64,6 +67,7 @@ ImageResult::ImageResult(QWidget *parent) :
     ui->lineEdit_speed->setValidator(validator);
 
     ui->lineEdit_label_step->setValidator(new QIntValidator(0, 100, this));
+    ui->lineEdit_DB->setValidator(new QIntValidator(0, 1000, this));
 
 
     // window qt编译， 要求文件编码格式为utf-8 with BOM
@@ -249,14 +253,26 @@ void ImageResult::setCamera(GPUCameraBase* cameraPtr)
             ui->checkBox_control->setEnabled(false);
             ui->checkBox_label->setEnabled(true);
             ui->lineEdit_label_step->setEnabled(true);
+            ui->lineEdit_ip->setEnabled(false);
+            ui->lineEdit_DB->setEnabled(false);
         }
         else
         {
             ui->checkBox_control->setEnabled(true);
             ui->checkBox_label->setEnabled(false);
             ui->lineEdit_label_step->setEnabled(false);
+            ui->lineEdit_ip->setEnabled(true);
+            ui->lineEdit_DB->setEnabled(true);
         }
-    }    
+    }
+    else
+    {
+        ui->checkBox_control->setEnabled(false);
+        ui->checkBox_label->setEnabled(false);
+        ui->lineEdit_label_step->setEnabled(false);
+        ui->lineEdit_ip->setEnabled(false);
+        ui->lineEdit_DB->setEnabled(false);
+    }
 }
 
 
@@ -268,6 +284,12 @@ void ImageResult::setProc(RawProcessor* proc)
         QSignalBlocker b(ui->checkBox_control);
         ui->checkBox_control->setChecked(mProc->isControl());
     }
+    else
+    {
+        QSignalBlocker b(ui->checkBox_control);
+        ui->checkBox_control->setChecked(false);
+        ui->checkBox_control->setEnabled(false);
+    }
 }
 
 void ImageResult::setStreaming(bool value)
@@ -275,13 +297,8 @@ void ImageResult::setStreaming(bool value)
     mStream = value;
     qDebug("ImageResult::streaming:%d", value);
     ui->horizontalSlider->setEnabled(false);
-    if(value)
-    {
-        mResults.clear();
-        mResults_modified.clear();
-        mAvg = {0};
-        mAvg_modified = {0};    
-    }
+
+
 
     if(mCamera != nullptr)
     {
@@ -294,6 +311,24 @@ void ImageResult::setStreaming(bool value)
                 ui->horizontalSlider->setEnabled(true);
             }
         }
+        else
+        {        
+            if(value)
+            {
+                ui->lineEdit_ip->setEnabled(false);
+                ui->lineEdit_DB->setEnabled(false);
+                ui->checkBox_control->setEnabled(false);
+            }
+            else
+            {
+                ui->lineEdit_ip->setEnabled(true);
+                ui->lineEdit_DB->setEnabled(true);
+                ui->checkBox_control->setEnabled(true);
+            }
+        }
+
+
+
     }
 }
 
@@ -493,7 +528,7 @@ void ImageResult::UpdateChart()
             all = speed * all / fps * 100;
         }
 
-        if(mStream)
+        if(mStream || mCamera->devID() >= 0)
         {
             depth_chart->axisX()->setRange(frame_min, frame_max);
             stable_chart->axisX()->setRange(frame_min, frame_max);
@@ -509,7 +544,7 @@ void ImageResult::UpdateChart()
 
         // 设置右侧Y轴（背面质量评分）范围
         QValueAxis *axis_status = qobject_cast<QValueAxis *>(depth_chart->axes(Qt::Vertical).at(1));
-        axis_status->setRange(1, 4);
+        axis_status->setRange(1, 5);
 
         // 设置X轴范围
         
@@ -1100,13 +1135,7 @@ void ImageResult::clear()
     {
         QSignalBlocker b(ui->checkBox_label);
         ui->checkBox_label->setChecked(false);
-    }
-
-    {
-        QSignalBlocker b(ui->checkBox_control);
-        ui->checkBox_control->setChecked(false);
-    }
-    
+    }   
     // ui->lineEdit_thick->clear();
     // ui->lineEdit_speed->clear();
     // ui->lineEdit_length->clear();
@@ -1243,11 +1272,6 @@ void ImageResult::on_data_changed(const QModelIndex &topLeft, const QModelIndex 
     }
 }
 
-void ImageResult::on_checkBox_control_stateChanged(int arg1)
-{
-
-}
-
 
 void ImageResult::on_checkBox_control_clicked(bool checked)
 {
@@ -1261,20 +1285,27 @@ void ImageResult::on_checkBox_control_clicked(bool checked)
     {
         if(checked)
         {
-            int ret= mProc->startControl(ip.toStdString().c_str(),0,2);
+            mProc->disconnectPLC();
+            mProc->setControl_DB(ui->lineEdit_DB->text().toInt());
+            int ret= mProc->connectPLC(ip.toStdString().c_str(),0,2);
             if(ret < 0)
             {
                 {
                     QSignalBlocker b(ui->checkBox_control);
                     ui->checkBox_control->setChecked(false);
-                }                
+                }
                 QMessageBox::warning(this, "Connection Error", "Failed to connect to PLC.");
                 
+            }
+            else
+            {
+                sendStatus("connect PLC success");
             }
         }
         else
         {
-            mProc->stopControl();
+            qDebug("disconnectPLC");  
+            mProc->disconnectPLC();
             {
                 QSignalBlocker b(ui->checkBox_control);
                 ui->checkBox_control->setChecked(false);

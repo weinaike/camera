@@ -31,7 +31,8 @@
 #include <QStyleFactory>
 #include <QMessageBox>
 #include "version.h"
-
+#include "GPUCameraBase.h"
+#include "WeldData.h"
 int main(int argc, char *argv[])
 {
 #if QT_VERSION >= 0x050600
@@ -39,7 +40,8 @@ int main(int argc, char *argv[])
 #endif
 
     QApplication a(argc, argv);
-
+    qRegisterMetaType<GPUCameraBase::cmrCameraState>("GPUCameraBase::cmrCameraState");
+    qRegisterMetaType<WeldResult>("WeldResult");
     QCoreApplication::setOrganizationName(QStringLiteral(APP_ORGANIZATION_NAME));
     QCoreApplication::setOrganizationDomain(QStringLiteral(APP_ORGANIZATION_DOMAIN));
     QCoreApplication::setApplicationName(QStringLiteral(MAIN_APPLICATION_NAME));
