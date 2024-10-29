@@ -2,7 +2,9 @@
 
 
 #include <QTimer>
+#include <QTime>
 #include "AsyncControl.h"
+#include <QMessageBox>
 AsyncControl::AsyncControl(int maxSize, QObject *parent):
     QObject(parent), mQueue(maxSize)
 {
@@ -12,6 +14,7 @@ AsyncControl::AsyncControl(int maxSize, QObject *parent):
     mWorkThread.start();
     maxQueuSize = maxSize;
     plcClient = new TS7Client();
+    mLog.open("laser_control.log", std::ios::out);
 }
 
 AsyncControl::~AsyncControl()
@@ -22,6 +25,7 @@ AsyncControl::~AsyncControl()
         delete plcClient;
         plcClient = nullptr;
     }   
+    mLog.close();
     mWorkThread.quit();
     mWorkThread.wait(3000);
 }
@@ -104,6 +108,7 @@ void AsyncControl::startControl()
     
     mDropped = 0;
     int cmd_id = 0;
+    int alarm_frame = 0;
     while(!mCancel)
     {
         mut.lock();
@@ -119,20 +124,26 @@ void AsyncControl::startControl()
             }
             float power_ratio = 0.0;
 
-            if (judagePower(result, power_ratio))
+            WeldResult last = result.back();
+            
+            if (judagePower(result, power_ratio) && (last.frame_id - alarm_frame) > 20)
             {
+                qDebug("last frame: %d\n", last.frame_id);
                 task.command_id = cmd_id;
-                task.power = power_ratio;
-                int result = plcClient->WriteArea(S7AreaDB, mDBID, 0, sizeof(LaserControlData), S7WLByte, &task);
-                qDebug("WriteArea: %d, %f\n", task.command_id, task.power);
+                task.power = power_ratio;                
+                int result = plcClient->WriteArea(S7AreaDB, mDBID, 0, sizeof(LaserControlData), S7WLByte, &task);                
                 if(result != 0)
                 {
                     mDropped++;
                 }
-
+                alarm_frame = last.frame_id;
                 cmd_id++;
-            }
 
+                // 获取当前时间戳
+                QString timestamp = QTime::currentTime().toString("HH:mm:ss");
+                mLog << timestamp.toStdString() << " WriteArea: frame: " << alarm_frame << ", " << task.command_id << ", " << task.power << std::endl;
+                // qDebug("WriteArea: frame:%d , %d, %f\n", alarm_frame, task.command_id, task.power);
+            }
         }
     }
 

@@ -36,24 +36,6 @@ void QTestWidget::on_pushButton_trigger_clicked()
 
 
 
-void QTestWidget::on_pushButton_send_clicked()
-{
-    if(mClient)
-    {
-        int dbID= ui->lineEdit_db->text().toInt();
-        float data = ui->lineEdit_data->text().toFloat();
-        
-        ControlData task = {0};
-        task.command_id = 0;
-        task.power = data;
-        int ret = mClient->DBWrite(dbID, 0, 4, &data);
-        if (ret < 0)
-        {
-            QMessageBox::warning(this, "Error", "Failed to write data to PLC.");
-        }
-    }
-}
-
 
 void QTestWidget::on_pushButton_disconnect_clicked()
 {
@@ -90,15 +72,37 @@ void QTestWidget::on_pushButton_sendarea_clicked()
     {
         int dbID= ui->lineEdit_db->text().toInt();
         float data = ui->lineEdit_data->text().toFloat();
+        for(int i = 0; i < 10; i++)
+        {
+            LaserControlData task = {0};
+            task.command_id = i;
+            task.power = data;
+            int ret = mClient->WriteArea(S7AreaDB, dbID, 0, sizeof(LaserControlData), S7WLByte, &task);
+            if (ret != 0)
+            {
+                QMessageBox::warning(this, "Error", "Failed to write data to PLC.");
+            }
+            // 延时20ms
+            QThread::msleep(20);
+        }
+    }
+}
 
-        ControlData task = {0};
+
+void QTestWidget::on_pushButton_send_clicked()
+{
+    if(mClient)
+    {
+        int dbID= ui->lineEdit_db->text().toInt();
+        float data = ui->lineEdit_data->text().toFloat();
+        
+        LaserControlData task = {0};
         task.command_id = 0;
         task.power = data;
-        int ret = mClient->WriteArea(S7AreaDB, dbID, 0, sizeof(ControlData), S7WLByte, &task);
+        int ret = mClient->WriteArea(S7AreaDB, dbID, 0, sizeof(LaserControlData), S7WLByte, &task);
         if (ret != 0)
         {
             QMessageBox::warning(this, "Error", "Failed to write data to PLC.");
         }
     }
 }
-

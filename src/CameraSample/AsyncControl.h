@@ -9,15 +9,7 @@
 #include "AsyncQueue.h"
 #include "snap7.h"
 #include "WeldData.h"
-
-struct LaserControlData
-{
-    int     command_id;     // command id    
-    float   power;          // Laser power
-    float   de_focus;       // De-focus
-    float   speed;          // Welding speed
-};
-
+#include <fstream>
 
 class AsyncControl : public QObject
 {
@@ -52,6 +44,8 @@ protected:
     int maxQueuSize = 32;
     int mDropped = 0;
     TS7Client * plcClient = nullptr;
+
+    std::ofstream mLog;
 };
 
 

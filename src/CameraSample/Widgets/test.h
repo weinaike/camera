@@ -4,18 +4,10 @@
 #include <QWidget>
 #include "GPUCameraBase.h"
 #include "snap7.h"
+#include "WeldData.h"
 namespace Ui {
 class QTestWidget;
 }
-
-struct ControlData
-{
-    int     command_id;     // command id    
-    float   power;          // Laser power
-    float   de_focus;       // De-focus
-    float   speed;          // Welding speed
-};
-
 
 class QTestWidget : public QWidget
 {

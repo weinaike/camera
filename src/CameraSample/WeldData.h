@@ -13,4 +13,14 @@ struct WeldResult {
     float   back_quality; 
 };
 
+
+struct LaserControlData
+{
+    int     command_id;     // command id    
+    float   power;          // Laser power
+    float   de_focus;       // De-focus
+    float   speed;          // Welding speed
+};
+
+
 Q_DECLARE_METATYPE(WeldResult)

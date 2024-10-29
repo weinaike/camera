@@ -55,7 +55,8 @@ public slots:
 
 protected:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
-
+    void writeSettings();
+    void readSettings();
 
 private slots:
     void on_load_status_model_clicked();

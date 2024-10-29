@@ -35,6 +35,7 @@ ImageResult::ImageResult(QWidget *parent) :
     mModel(new QStandardItemModel(this))
 {
     ui->setupUi(this);
+
     // 滑块设置
     connect(ui->horizontalSlider, &QSlider::valueChanged, this,&ImageResult::set_slider_value);
 
@@ -54,6 +55,8 @@ ImageResult::ImageResult(QWidget *parent) :
     ui->checkBox_label->setEnabled(false);
     ui->lineEdit_label_step->setEnabled(false);
 
+    ui->lineEdit_speed->setEnabled(false);
+    ui->lineEdit_thick->setEnabled(false);
 
     ui->resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->resultTable->setColumnWidth(4,2);
@@ -234,12 +237,13 @@ ImageResult::ImageResult(QWidget *parent) :
 
     mFrameMax = 0;
     mTimer.start();
+    readSettings();
 }
 
 
 ImageResult::~ImageResult()
 {
-
+    writeSettings();
     delete ui;
 }
 void ImageResult::setCamera(GPUCameraBase* cameraPtr)
@@ -255,6 +259,8 @@ void ImageResult::setCamera(GPUCameraBase* cameraPtr)
             ui->lineEdit_label_step->setEnabled(true);
             ui->lineEdit_ip->setEnabled(false);
             ui->lineEdit_DB->setEnabled(false);
+            ui->lineEdit_speed->setEnabled(true);
+            ui->lineEdit_thick->setEnabled(true);
         }
         else
         {
@@ -263,6 +269,8 @@ void ImageResult::setCamera(GPUCameraBase* cameraPtr)
             ui->lineEdit_label_step->setEnabled(false);
             ui->lineEdit_ip->setEnabled(true);
             ui->lineEdit_DB->setEnabled(true);
+            ui->lineEdit_speed->setEnabled(false);
+            ui->lineEdit_thick->setEnabled(false);
         }
     }
     else
@@ -272,6 +280,8 @@ void ImageResult::setCamera(GPUCameraBase* cameraPtr)
         ui->lineEdit_label_step->setEnabled(false);
         ui->lineEdit_ip->setEnabled(false);
         ui->lineEdit_DB->setEnabled(false);
+        ui->lineEdit_speed->setEnabled(false);
+        ui->lineEdit_thick->setEnabled(false);
     }
 }
 
@@ -1329,3 +1339,31 @@ void ImageResult::on_checkBox_label_clicked(bool checked)
     }
 }
 
+void ImageResult::readSettings()
+{
+    QSettings settings;
+
+    {
+        QSignalBlocker b(ui->lineEdit_label_step);
+        ui->lineEdit_label_step->setText(settings.value("label_step", 10).toString());
+    }
+    {
+        QSignalBlocker b(ui->lineEdit_DB);
+        ui->lineEdit_DB->setText(settings.value("DB", 21).toString());
+    }
+    {
+        QSignalBlocker b(ui->lineEdit_ip);
+        ui->lineEdit_ip->setText(settings.value("ip", "127.0.0.1").toString());
+    }
+
+    settings.endGroup();
+}
+
+void ImageResult::writeSettings()
+{
+    QSettings settings;
+
+    settings.setValue("label_step", ui->lineEdit_label_step->text());
+    settings.setValue("DB", ui->lineEdit_DB->text());
+    settings.setValue("ip", ui->lineEdit_ip->text());
+}
