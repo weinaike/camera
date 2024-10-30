@@ -14,7 +14,8 @@ AsyncControl::AsyncControl(int maxSize, QObject *parent):
     mWorkThread.start();
     maxQueuSize = maxSize;
     plcClient = new TS7Client();
-    mLog.open("laser_control.log", std::ios::out);
+    // 追加
+    mLog.open("laser_control.log", std::ios::out | std::ios::app);
 }
 
 AsyncControl::~AsyncControl()
@@ -128,7 +129,6 @@ void AsyncControl::startControl()
             
             if (judagePower(result, power_ratio) && (last.frame_id - alarm_frame) > 20)
             {
-                qDebug("last frame: %d\n", last.frame_id);
                 task.command_id = cmd_id;
                 task.power = power_ratio;                
                 int result = plcClient->WriteArea(S7AreaDB, mDBID, 0, sizeof(LaserControlData), S7WLByte, &task);                
@@ -150,6 +150,7 @@ void AsyncControl::startControl()
     if(mDropped > 0)
     {
         qDebug("Dropped %d tasks\n", mDropped);
+        mLog << "Dropped: " << mDropped << std::endl;
     }
     mControlling = false;
 }

@@ -459,7 +459,7 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
     {
         QMessageBox::critical(this, QCoreApplication::applicationName(),
                               QObject::tr("Cannot open camera\nor no camera is connected."));
-
+        mCameraPtr.reset();
         return;
     }
     if (devID < 0)

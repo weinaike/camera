@@ -1355,8 +1355,6 @@ void ImageResult::readSettings()
         QSignalBlocker b(ui->lineEdit_ip);
         ui->lineEdit_ip->setText(settings.value("ip", "127.0.0.1").toString());
     }
-
-    settings.endGroup();
 }
 
 void ImageResult::writeSettings()

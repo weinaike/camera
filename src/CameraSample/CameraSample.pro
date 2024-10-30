@@ -10,7 +10,7 @@ TEMPLATE = app
 
 unix:  FASTVIDEO_EXTRA_DLLS += $$PWD/GPUCameraSample.sh
 
-CONFIG += console
+CONFIG -= console
 CONFIG += c++11
 
 INCLUDEPATH += $$PWD
@@ -195,7 +195,7 @@ win32:copyPluginsToDestdir(imageformats)
 
 copyQtDllsToDestdir($$QT_DLLS)
 copyToDestdir($$FASTVIDEO_EXTRA_DLLS)
-copyToDestdir($$TRT_DLL)
+
 
 
 unix {
@@ -217,6 +217,8 @@ win32 {
 
     copyToDestdir($$FASTVIDEO_DLL)
     copyToDestdir($$CUDA_DLL)
+    copyToDestdir($$TRT_DLLS)
+    copyToDestdir($$CUDNN_DLLS)
 }
 
 

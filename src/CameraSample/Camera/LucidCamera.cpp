@@ -43,6 +43,8 @@ bool LucidCamera::open(int devID)
         deviceInfos = mSystem->GetDevices();
         if (deviceInfos.size() == 0)
         {
+            Arena::CloseSystem(mSystem);
+            mSystem = nullptr;
             qDebug() << "No camera connected";
             return false;
         }
@@ -52,8 +54,12 @@ bool LucidCamera::open(int devID)
 
 
 
-        if(!mDevice)
+        if(mDevice == nullptr)
+        {
+            qDebug() << "mDevice is nullptr";
             return false;
+        }
+            
 
         mManufacturer = QString::fromStdString(devInfo.VendorName().c_str());
         mModel = QString::fromStdString(devInfo.ModelName().c_str());
@@ -313,7 +319,6 @@ bool LucidCamera::stop()
 {
     mState = cstStopped;
     emit stateChanged(cstStopped);
-
     return true;
 }
 
