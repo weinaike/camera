@@ -183,6 +183,10 @@ void RawProcessor::startWorking()
         }
     }
 
+
+    float fps = 0;
+    mCamera->getParameter(GPUCameraBase::prmFrameRate, fps);
+    qDebug("RawProcessor::startWorking() fps = %f\n", fps);
     mWake = false;
     qint64 previous = tm.elapsed();
     int frameCount = 0;
@@ -216,6 +220,8 @@ void RawProcessor::startWorking()
         {      
             std::shared_ptr<ZJVIDEO::FrameData> frame = std::make_shared<ZJVIDEO::FrameData>(img->w, img->h, ZJVIDEO::ZJV_IMAGEFORMAT_GRAY8);
             frame->frame_id =  img->frameID;
+            frame->fps = fps;
+            frame->camera_id = 0;            
             #if USE_CUDA
                 cudaMemcpy(frame->data->mutable_gpu_data(), img->data.get(), frame->data->size(), cudaMemcpyDeviceToDevice);
                 mPipe->set_input_data(frame);
@@ -223,53 +229,63 @@ void RawProcessor::startWorking()
                 memcpy(frame->data->mutable_cpu_data(), img->data.get(), frame->data->size());
                 mPipe->set_input_data(frame);
             #endif
-
-            std::vector<std::shared_ptr<ZJVIDEO::EventData> > datas;
-            datas.clear();
-            mPipe->get_output_data(datas);
-
-            for(const auto & data : datas)
+            while(true)
             {
-                for(const auto & extra : data->extras)
+                std::vector<std::shared_ptr<ZJVIDEO::EventData> > datas;
+                datas.clear();
+                mPipe->get_output_data(datas);
+                if (datas.size() == 0) break; //退出
+                   
+                // qDebug("frame_id: %d, datas.size(): %d\n", frame->frame_id, datas.size());
+                for(const auto & data : datas)
                 {
-                    if(extra->data_name == "WeldResult")
+                    for(const auto & extra : data->extras)
                     {
-                        std::shared_ptr<const ZJVIDEO::WeldResultData> weld = std::dynamic_pointer_cast<const ZJVIDEO::WeldResultData>(extra);
-
-                        if(weld->is_enable)
+                        if(extra->data_name == "WeldResult")
                         {
-                            WeldResult weld_result = {0} ;
-                            weld_result.frame_id = weld->frame_id;
-                            weld_result.camera_id = weld->camera_id;
-                            weld_result.status_score = weld->status_score;
-                            weld_result.weld_status = weld->weld_status - 1000;
-                            if(weld->weld_status == 1004)
+                            std::shared_ptr<const ZJVIDEO::WeldResultData> weld = std::dynamic_pointer_cast<const ZJVIDEO::WeldResultData>(extra);
+
+                            if(weld->is_enable)
                             {
-                                weld_result.weld_depth = 0;
-                                weld_result.front_quality = 0;
-                                weld_result.back_quality = 0;
-                            }
-                            else
-                            {
-                                weld_result.weld_depth = weld->weld_depth;
-                                weld_result.front_quality = weld->front_quality;
-                                weld_result.back_quality = weld->back_quality;
-                            }
-                            emit send_result(weld_result);
-                            // mPipe->show_debug_info();
-                            // printf("WeldResult:     frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f\n", 
-                            //     weld->frame_id, weld->camera_id, weld->weld_status, weld->status_score, weld->weld_depth, weld->front_quality, weld->back_quality);
+                                WeldResult weld_result = {0} ;
+                                weld_result.frame_id = weld->frame_id;
+                                weld_result.camera_id = weld->camera_id;
+                                weld_result.status_score = weld->status_score;
+                                weld_result.weld_status = weld->weld_status - 1000;
+                                if(weld->weld_status == 1004)
+                                {
+                                    weld_result.weld_depth = 0;
+                                    weld_result.front_quality = 0;
+                                    weld_result.back_quality = 0;
+                                }
+                                else
+                                {
+                                    weld_result.weld_depth = weld->weld_depth;
+                                    weld_result.front_quality = weld->front_quality;
+                                    weld_result.back_quality = weld->back_quality;
+                                }
+                                if(weld->weld_status > 1001)
+                                {
+                                    weld_result.weld_depth = 0;
+                                }
+
+                                emit send_result(weld_result);
+                                
+                                // qDebug("WeldResult: frame_id: %d, camera_id: %d, weld_status: %d, status_score: %f, weld_depth: %f, front_quality: %f, back_quality: %f", 
+                                //     weld->frame_id, weld->camera_id, weld->weld_status, weld->status_score, weld->weld_depth, weld->front_quality, weld->back_quality);
 
 
-                            if(mControl)
-                            {
-                                // 将功率值写入 PLC 的寄存器，假设我们使用 DB1.DBW0（根据你的配置） 
-                                mControlPtr->put(weld_result, mDBID);
-                            }
-                        }                
-                    }
-                }            
+                                if(mControl)
+                                {
+                                    // 将功率值写入 PLC 的寄存器，假设我们使用 DB1.DBW0（根据你的配置） 
+                                    mControlPtr->put(weld_result, mDBID);
+                                }
+                            }                
+                        }
+                    }            
+                }
             }
+            
 
 
         }
@@ -578,6 +594,7 @@ void RawProcessor::stopInfer()
     mInfer = false;
     if(mPipe)
     {
+        mPipe->show_debug_info();
         mPipe->stop();
     }
     mPipe.reset();

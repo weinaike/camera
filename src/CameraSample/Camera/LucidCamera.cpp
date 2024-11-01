@@ -458,7 +458,11 @@ void LucidCamera::startStreaming()
                 const unsigned char* in = static_cast<const unsigned char *>(pImage->GetData());
                 unsigned char* out = mInputBuffer.getBuffer();
                 size_t sz = pImage->GetSizeFilled();
+#ifdef USE_CUDA
                 cudaMemcpy(out, in, sz, cudaMemcpyHostToDevice);
+#else
+                memcpy(out,in, sz);
+#endif
                 mInputBuffer.release();
             }
 

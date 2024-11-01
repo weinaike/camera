@@ -74,7 +74,7 @@ signals:
 public slots:
 
 private:
-    const int numBuffers = 4;
+    const int numBuffers = 8;
 
     //Currently written buffer
     int mCurrent = 0;

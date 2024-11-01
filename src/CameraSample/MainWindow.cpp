@@ -602,6 +602,19 @@ void MainWindow::openPGMFile(bool isBayer)
     // QString fileName = "/home/wnk/code/camera_sample/Img/video_640_512_8bit.raw";
     if(fileName.isEmpty())
         return;
+
+    QString fileExtension = QFileInfo(fileName).suffix();
+    bool IsRawFile = (fileExtension.toLower() == "raw");
+    if(IsRawFile)
+    {
+        ImageData info =  parseFileName(fileName.toStdString());
+        if(info.width == 0 || info.height == 0 || info.bitDepth == 0)
+        {
+            // QT 弹窗提示格式不满足，不是raw文件
+            QMessageBox::warning(nullptr, QStringLiteral("Error"), QStringLiteral("File format is not supported, please use the format like 640_512_12bit.raw"));
+            return ;
+        }
+    }
     printf("fileName:%s\n", fileName.toStdString().c_str());
     mCurrentDir = Globals::getPathOfFile(fileName);
 
@@ -610,10 +623,11 @@ void MainWindow::openPGMFile(bool isBayer)
 
     PGMCamera * camera = new PGMCamera(fileName, (fastBayerPattern_t)ui->cboBayerPattern->currentData().toInt(), isBayer);
 
+       
+    initNewCamera(camera, -1);
+
     // 变更视频文件指针的位置
     connect(ui->result, SIGNAL(set_video_progress(int)), camera, SLOT(setValue(int)));
-
-    initNewCamera(camera, -1);
 
 }
 
@@ -1378,7 +1392,8 @@ void MainWindow::onCameraStateChanged(GPUCameraBase::cmrCameraState newState)
         ui->cameraController->setEnabled(false);
     }
     else if(newState == GPUCameraBase::cstFinished)
-    {        
+    {
+        qDebug("Camera finished");
         {
             QSignalBlocker b(ui->actionPlay);
             ui->actionPlay->setChecked(false);
@@ -1460,6 +1475,7 @@ void MainWindow::on_actionPlay_toggled(bool arg1)
         QThread::msleep(500);
         mProcessorPtr->stop();
         QThread::msleep(500);
+        qDebug("mProcessorPtr->stop(); Camera finished");
         if(mInputMode == MODE_CAMERA_INTERNAL_TRIGGER){
             {
                 QSignalBlocker b(ui->actionRecord);

@@ -47,13 +47,6 @@ PGMCamera::PGMCamera(const QString &fileName,
     
 }
 
-struct ImageData {
-    int width;
-    int height;
-    int bitDepth;
-};
-
-
 ImageData parseFileName(const std::string& filename) {
     std::regex re(R"((\d+)_(\d+)_(\d+)bit)");
     std::smatch match;
@@ -248,7 +241,6 @@ bool PGMCamera::stop()
 {
     mState = cstStopped;
     emit stateChanged(cstStopped);
-
     return true;
 }
 
@@ -326,6 +318,7 @@ void PGMCamera::startStreaming()
             // Busy-wait or perform other operations
         }
     }
+    emit stateChanged(cstFinished); //finished对应与软件主动停止的状态， stop对应手动控件停止
 
     stop();
 }

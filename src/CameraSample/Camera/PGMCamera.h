@@ -35,6 +35,15 @@
 #include "MallocAllocator.h"
 #include <stdio.h>
 
+
+struct ImageData {
+    int width;
+    int height;
+    int bitDepth;
+};
+
+
+ImageData parseFileName(const std::string& filename) ;
 class PGMCamera : public GPUCameraBase
 {
 public:

@@ -9,6 +9,7 @@
 #include "customlabel.h"
 #include "WeldData.h"
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QScatterSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
 #include <QMutex>
@@ -104,7 +105,7 @@ private:
     WeldResult mAvg_modified;
 
     QLineSeries *status_series = nullptr;
-    QLineSeries *depth_series = nullptr;
+    QScatterSeries *depth_series = nullptr;
     QChart *depth_chart = nullptr;
     QChartView *depth_chartView = nullptr;
 
@@ -115,7 +116,7 @@ private:
 
     QLineSeries *redLineSeries_depth = nullptr;
     QLineSeries *redLineSeries_stable = nullptr;
-
+    int mSliderValue = 0;
     int mFrameMax;
     bool mIsInternalUpdate = false;
 };

@@ -106,13 +106,34 @@ ImageResult::ImageResult(QWidget *parent) :
 
 
     status_series =  new QLineSeries();
-    depth_series =  new QLineSeries();
+    depth_series =  new QScatterSeries();
+    depth_series->setMarkerSize(2);
+    depth_series->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+    depth_series->setColor(Qt::blue);
+    depth_series->setBorderColor(Qt::blue);
+    depth_series->setPen(QPen(Qt::blue));
+    depth_series->setBrush(QBrush(Qt::blue));
+    QColor color = depth_series->color();
+
+    // void setPen(const QPen &pen);
+    // void setBrush(const QBrush &brush);
+    // QBrush brush() const;
+    // void setColor(const QColor &color);
+    // QColor color() const;
+    // void setBorderColor(const QColor &color);
+    // void setMarkerShape(MarkerShape shape);
+    // void setMarkerSize(qreal size);
+
+    // depth_series->setPen(QPen(Qt::blue));
+    qDebug("depth_series->pen().color() = %s", depth_series->pen().color().name().toStdString().c_str());
+    
 
     // 创建一个图表对象
     depth_chart = new QChart();
-    depth_chart->legend()->hide();
+    depth_chart->legend()->hide();    
     depth_chart->addSeries(depth_series);
     depth_chart->addSeries(status_series);
+
 
     // 创建两个轴
     QValueAxis *axisY_depth = new QValueAxis();
@@ -131,10 +152,11 @@ ImageResult::ImageResult(QWidget *parent) :
     // 设置 y 坐标轴颜色与曲线颜色相同
     QPen depthPen = depth_series->pen();
     QPen statusPen = status_series->pen();
-    axisY_depth->setLinePen(depthPen);
-    axisY_depth->setLabelsColor(depthPen.color());
+    axisY_depth->setLinePen(QPen(color));
+    axisY_depth->setLabelsColor(color);
     axisY_status->setLinePen(statusPen);
     axisY_status->setLabelsColor(statusPen.color());
+
 
 
 
@@ -209,7 +231,7 @@ ImageResult::ImageResult(QWidget *parent) :
     axisY_front->setLabelsColor(frontPen.color());
     axisY_back->setLinePen(backPen);
     axisY_back->setLabelsColor(backPen.color());
-
+    // qDebug("frontPen.color() = %s", frontPen.color().name().toStdString().c_str());
 
     // 确保 depth_series 使用默认的 Y 轴
     front_series->attachAxis(axisX_2);
@@ -347,6 +369,7 @@ void ImageResult::setStreaming(bool value)
 void ImageResult::set_slider_value(int value)
 {
     qDebug("%s %d",__func__, value);
+    mSliderValue = value;
     if(mCamera != nullptr)
     {
         emit set_video_progress(value);
@@ -608,7 +631,12 @@ void ImageResult::get_result(WeldResult result)
     if (mCamera->devID() < 0)
     {
         // 保存结果
-        mResults_modified.push_back(result);
+        WeldResult modified_result = result;
+        if(result.weld_status > 1)
+        {
+            modified_result.weld_depth = 0;
+        }
+        mResults_modified.push_back(modified_result);
     }
     
 
@@ -646,6 +674,7 @@ void ImageResult::UpdateTable(WeldResult result)
         int cnt = 0;
         mAvg_modified = {0};
         int status_profile[4] = {0};
+        float status_score = 0;
         for(auto r : mResults_modified)
         {
             // 标定平均值计算
@@ -662,6 +691,7 @@ void ImageResult::UpdateTable(WeldResult result)
                     mAvg_modified.weld_depth += r.weld_depth;
                     mAvg_modified.front_quality += r.front_quality;
                     mAvg_modified.back_quality += r.back_quality;
+                    status_score += r.weld_status;                    
                 }
             }            
         }
@@ -670,6 +700,7 @@ void ImageResult::UpdateTable(WeldResult result)
             mAvg_modified.weld_depth /= cnt;
             mAvg_modified.front_quality /= cnt;
             mAvg_modified.back_quality /= cnt;
+            status_score /= cnt;
         }
         int max = 0;
         int max_index = 0;  
@@ -682,14 +713,15 @@ void ImageResult::UpdateTable(WeldResult result)
             }
         }
         mAvg_modified.weld_status = max_index + 1;
-        mModel->item(0, 1)->setText(QString::number(mAvg_modified.weld_status));
+        // mModel->item(0, 1)->setText(QString::number(mAvg_modified.weld_status,'f', 2));
+        mModel->item(0, 1)->setText(QString::number(status_score, 'f', 2));
         mModel->item(1, 1)->setText(QString::number(mAvg_modified.weld_depth, 'f', 2));
         mModel->item(2, 1)->setText(QString::number(mAvg_modified.front_quality, 'f', 2));
         mModel->item(3, 1)->setText(QString::number(mAvg_modified.back_quality, 'f', 2));
     }
     else
     {
-        mModel->item(0, 1)->setText(QString::number(mAvg.weld_status));
+        mModel->item(0, 1)->setText(QString::number(mAvg.weld_status, 'f', 2));
         mModel->item(1, 1)->setText(QString::number(mAvg.weld_depth, 'f', 2));
         mModel->item(2, 1)->setText(QString::number(mAvg.front_quality, 'f', 2));
         mModel->item(3, 1)->setText(QString::number(mAvg.back_quality, 'f', 2));
@@ -814,6 +846,12 @@ void ImageResult::on_load_quality_model_clicked()
 
 void ImageResult::on_load_video_clicked()
 {   
+    if(mStream)
+    {
+        QMessageBox::warning(this, "Warning", "Please stop the camera before loading a video file");
+        return;
+    }
+
     emit callParentOpenPMG(false);
     // 重新设置滑块
 }
@@ -1032,6 +1070,9 @@ void ImageResult::loadData()
 {
     mResults.clear();
     mResults_modified.clear();
+    ui->lineEdit_thick->clear();
+    ui->lineEdit_speed->clear();
+    ui->lineEdit_length->clear();
     mAvg = {0};
     mAvg_modified = {0};
 
@@ -1255,7 +1296,7 @@ void ImageResult::on_data_changed(const QModelIndex &topLeft, const QModelIndex 
             if(row == 1) presult->weld_depth = f;
             else if(row == 2) presult->front_quality = f;
             else if(row == 3) presult->back_quality = f;
-            else if(row == 0) presult->weld_status = int(f);            
+            else if(row == 0) {if(f < 4 && f > 0 ) presult->weld_status = int(f); }
         }
         else if(col == 1)
         {   
@@ -1274,11 +1315,13 @@ void ImageResult::on_data_changed(const QModelIndex &topLeft, const QModelIndex 
                         if(row == 1) r.weld_depth = f;
                         else if(row == 2) r.front_quality = f;
                         else if(row == 3) r.back_quality = f;
-                        else if(row == 0) r.weld_status = int(f);            
+                        else if(row == 0) {if(f < 4 && f > 0) r.weld_status = int(f); }  
                     }                    
                 }            
             }
         }             
+        // UpdateTable(mResults_modified[0]);
+        set_slider_value(mSliderValue);
     }
 }
 
@@ -1330,11 +1373,19 @@ void ImageResult::on_checkBox_label_clicked(bool checked)
     if(checked)
     {
         // 判断ui->lineEdit_speed 是否为空
-        if(ui->lineEdit_speed->text().isEmpty())
+        if(ui->lineEdit_speed->text().isEmpty() || ui->lineEdit_thick->text().isEmpty())
         {
-            QMessageBox::warning(this, "Warning", " 请先输入速度.");
+            QMessageBox::warning(this, "Warning", " 请先输入速度与试样厚度");
             ui->checkBox_label->setChecked(false);
             return;
+        }
+
+        for(auto & result : mResults_modified)
+        {
+            if(result.weld_status > 1 && result.weld_depth > -0.01)
+            {
+                result.weld_depth = -1000.0 * ui->lineEdit_thick->text().toFloat();
+            }
         }
     }
 }
