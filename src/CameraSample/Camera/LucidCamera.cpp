@@ -68,7 +68,12 @@ bool LucidCamera::open(int devID)
         mMacAddress = QString::fromStdString(devInfo.MacAddressStr().c_str());
         mSubnetMask = QString::fromStdString(devInfo.SubnetMaskStr().c_str());
         mGateway = QString::fromStdString(devInfo.DefaultGatewayStr().c_str());
-
+        if( mSerial.compare("242900251") != 0  &&
+            mSerial.compare("240100073") != 0)
+        {
+            QMessageBox(QMessageBox::Warning, "Warning", "SN of camera is invalid", QMessageBox::Ok).exec();
+            return false;
+        }
         INodeMap* nodeMap = mDevice->GetNodeMap();
 
         CIntegerPtr ptrInt = nodeMap->GetNode("Width");

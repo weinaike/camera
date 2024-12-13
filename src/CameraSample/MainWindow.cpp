@@ -333,6 +333,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // ui->cameraStatWidget->hide();
 
     ui->cameraController->setEnabled(false);
+    ui->actionClose->setEnabled(false);
+    ui->actionOpenCamera->setEnabled(true);
+    ui->actionOpenGrayPGM->setEnabled(true);
 }   
 
 MainWindow::~MainWindow()
@@ -467,11 +470,17 @@ void MainWindow::initNewCamera(GPUCameraBase* cmr, int devID)
         showStatus("Video Ready");
         onModeChanged(INPUT_MODE::MODE_VIDEO);
         ui->cameraController->setEnabled(false);
+        ui->actionClose->setEnabled(true);
+        ui->actionOpenGrayPGM->setEnabled(false);
+        ui->actionOpenCamera->setEnabled(false);
     }
     else
     {
         showStatus("Camera Ready");
         ui->cameraController->setEnabled(true);
+        ui->actionClose->setEnabled(true);
+        ui->actionOpenGrayPGM->setEnabled(false);
+        ui->actionOpenCamera->setEnabled(false);
     }
     
     connect(mCameraPtr.data(),
@@ -1021,7 +1030,9 @@ void MainWindow::on_actionRecord_toggled(bool arg1)
 void MainWindow::on_actionExit_triggered()
 {
     on_actionClose_triggered();
-    close();
+    bool play = ui->actionPlay->isChecked();
+    if(!play)
+        close();
 }
 
 void MainWindow::on_actionWB_picker_toggled(bool arg1)
@@ -1595,6 +1606,16 @@ void setBitrate(QComboBox* cb, int bitrate)
 
 void MainWindow::on_actionClose_triggered()
 {
+    bool play = ui->actionPlay->isChecked();
+    if(play)
+    {
+        // QMessageBox::critical(this, QCoreApplication::applicationName(),
+        //                       QObject::tr("先停止播放"));
+        QMessageBox::warning(nullptr, QStringLiteral("warning"), 
+            QStringLiteral("先停止播放"));                              
+        return;
+    }
+
     {
         QSignalBlocker b(ui->actionPlay);
         ui->actionPlay->setChecked(false);
@@ -1653,6 +1674,9 @@ void MainWindow::on_actionClose_triggered()
     ui->actionPlay->setEnabled(false);
     ui->actionInfer->setEnabled(false);
     ui->cameraController->setEnabled(false);
+    ui->actionOpenGrayPGM->setEnabled(true);
+    ui->actionOpenCamera->setEnabled(true);
+    ui->actionClose->setEnabled(false);
 }
 
 void MainWindow::onModeChanged(INPUT_MODE mode)
