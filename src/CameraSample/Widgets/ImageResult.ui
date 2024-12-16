@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1060</width>
-    <height>626</height>
+    <width>1207</width>
+    <height>684</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,540 +19,565 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QWidget" name="verticalLayoutWidget_3">
-   <property name="geometry">
-    <rect>
-     <x>643</x>
-     <y>-1</y>
-     <width>411</width>
-     <height>621</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="spacing">
-     <number>6</number>
-    </property>
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>10</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>600</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>熔透状态与熔深曲线</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QWidget" name="depthContainer" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>200</width>
-        <height>180</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>640</width>
-        <height>300</height>
-       </size>
-      </property>
-      <property name="autoFillBackground">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>600</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>成形质量曲线</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QWidget" name="statusContainer" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>180</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>640</width>
-        <height>300</height>
-       </size>
-      </property>
-      <property name="autoFillBackground">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QSlider" name="horizontalSlider">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QTableView" name="resultTable">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>6000</width>
-        <height>1000</height>
-       </size>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;熔透状态：1: 未透， 2：正常熔透， 3：过熔透， 4：其它（无信号）&lt;/p&gt;&lt;p&gt;熔深：单位（um）（未熔透状态下数据有效）&lt;/p&gt;&lt;p&gt;成形质量：不合格（&amp;lt;50）, 中等( 50-70) ,  良好(70-90)，优质(&amp;gt;90)&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="sizeAdjustPolicy">
-       <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
-      </property>
-      <property name="autoScroll">
-       <bool>true</bool>
-      </property>
-      <attribute name="horizontalHeaderDefaultSectionSize">
-       <number>90</number>
-      </attribute>
-      <attribute name="verticalHeaderDefaultSectionSize">
-       <number>32</number>
-      </attribute>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
     <rect>
      <x>-1</x>
      <y>-1</y>
-     <width>641</width>
-     <height>511</height>
+     <width>1211</width>
+     <height>691</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="CustomLabel" name="showImage" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>320</width>
-        <height>240</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>640</width>
-        <height>512</height>
-       </size>
-      </property>
-      <property name="mouseTracking">
-       <bool>false</bool>
-      </property>
-      <property name="tabletTracking">
-       <bool>false</bool>
-      </property>
-      <property name="autoFillBackground">
-       <bool>true</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="text" stdset="0">
-       <string/>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="gridLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>510</y>
-     <width>641</width>
-     <height>111</height>
-    </rect>
-   </property>
-   <layout class="QGridLayout" name="gridLayout_2">
-    <property name="sizeConstraint">
-     <enum>QLayout::SetDefaultConstraint</enum>
-    </property>
-    <property name="leftMargin">
-     <number>5</number>
-    </property>
-    <property name="rightMargin">
-     <number>5</number>
-    </property>
-    <property name="verticalSpacing">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="50,50">
+    <property name="spacing">
      <number>6</number>
     </property>
-    <item row="1" column="2">
-     <widget class="QPushButton" name="load_video">
-      <property name="text">
-       <string>加载视频</string>
+    <property name="sizeConstraint">
+     <enum>QLayout::SetFixedSize</enum>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>6</number>
+    </property>
+    <property name="bottomMargin">
+     <number>6</number>
+    </property>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
       </property>
-     </widget>
-    </item>
-    <item row="2" column="2">
-     <widget class="QPushButton" name="save_predict_result">
-      <property name="text">
-       <string>   保存预测数据   </string>
+      <property name="rightMargin">
+       <number>6</number>
       </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="load_status_model">
-      <property name="text">
-       <string> 更新熔透状态模型 </string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3">
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <property name="leftMargin">
-       <number>5</number>
+      <property name="bottomMargin">
+       <number>6</number>
       </property>
       <item>
-       <widget class="QLabel" name="label_11">
+       <widget class="CustomLabel" name="showImage" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>640</width>
+          <height>512</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>640</width>
+          <height>512</height>
+         </size>
+        </property>
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
+        <property name="tabletTracking">
+         <bool>false</bool>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text" stdset="0">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetFixedSize</enum>
+        </property>
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="verticalSpacing">
+         <number>6</number>
+        </property>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="load_video">
+          <property name="text">
+           <string>加载视频</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="checkBox_control">
+          <property name="text">
+           <string>启动闭环控制</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>PLC</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_ip">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>127.0.0.1</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="load_status_model">
+          <property name="text">
+           <string> 更新熔透状态模型 </string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_11">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>焊缝长度 </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_length">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>cm  </string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>焊接速度 </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_speed">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>cm/s</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="load_quality_model">
+          <property name="text">
+           <string>更新成形质量模型</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QPushButton" name="save_label_result">
+          <property name="text">
+           <string>保存标注数据</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>选择模型</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QPushButton" name="save_predict_result">
+          <property name="text">
+           <string>   保存预测数据   </string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>试样厚度 </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_thick">
+            <property name="inputMask">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>mm  </string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="4">
+         <widget class="QCheckBox" name="checkBox_label">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>启动人工标注</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="load_depth_model">
+          <property name="text">
+           <string>更新熔深预测模型</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>数据块ID</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_DB">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>21</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="label_15">
+          <property name="text">
+           <string>标注参数</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4">
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string> 平均范围 </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_label_step">
+            <property name="text">
+             <string>10</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>mm</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>数据</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="text">
+           <string>闭环控制</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>试样与工艺参数</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>3000</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>熔透状态与熔深曲线</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="depthContainer" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>180</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>3000</width>
+          <height>500</height>
+         </size>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>3000</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>成形质量曲线</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="statusContainer" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>180</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>3000</width>
+          <height>500</height>
+         </size>
+        </property>
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableView" name="resultTable">
         <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="text">
-         <string>焊缝长度 </string>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_length">
-        <property name="enabled">
-         <bool>false</bool>
+        <property name="maximumSize">
+         <size>
+          <width>6000</width>
+          <height>150</height>
+         </size>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;熔透状态：1: 未透， 2：正常熔透， 3：过熔透， 4：其它（无信号）&lt;/p&gt;&lt;p&gt;熔深：单位（um）（未熔透状态下数据有效）&lt;/p&gt;&lt;p&gt;成形质量：不合格（&amp;lt;50）, 中等( 50-70) ,  良好(70-90)，优质(&amp;gt;90)&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>cm  </string>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
         </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="4">
-     <widget class="QLabel" name="label_15">
-      <property name="text">
-       <string>标注参数</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>试样厚度 </string>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_thick">
-        <property name="inputMask">
-         <string/>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+        <property name="autoScroll">
+         <bool>true</bool>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>mm  </string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="1" column="4">
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string> 平均范围 </string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_label_step">
-        <property name="text">
-         <string>10</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>mm</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="3">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>焊接速度 </string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_speed">
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>cm/s</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="4">
-     <widget class="QCheckBox" name="checkBox_label">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="text">
-       <string>启动人工标注</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="load_depth_model">
-      <property name="text">
-       <string>更新熔深预测模型</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="load_quality_model">
-      <property name="text">
-       <string>更新成形质量模型</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QCheckBox" name="checkBox_control">
-      <property name="text">
-       <string>启动闭环控制</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>数据</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>选择模型</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
-      </property>
-      <property name="text">
-       <string>闭环控制</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QPushButton" name="save_label_result">
-      <property name="text">
-       <string>保存标注数据</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>试样与工艺参数</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_16">
-        <property name="text">
-         <string>PLC</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_ip">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>127.0.0.1</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="3" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_7">
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_17">
-        <property name="text">
-         <string>数据块ID</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_DB">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>21</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>90</number>
+        </attribute>
+        <attribute name="verticalHeaderDefaultSectionSize">
+         <number>32</number>
+        </attribute>
        </widget>
       </item>
      </layout>
