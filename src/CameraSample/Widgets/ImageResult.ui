@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1207</width>
-    <height>684</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <horstretch>1</horstretch>
+    <verstretch>1</verstretch>
    </sizepolicy>
   </property>
   <property name="windowTitle">
@@ -25,10 +25,10 @@
      <x>-1</x>
      <y>-1</y>
      <width>1211</width>
-     <height>691</height>
+     <height>811</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout" stretch="50,50">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="45,55">
     <property name="spacing">
      <number>6</number>
     </property>
@@ -445,6 +445,12 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
       <item>
        <widget class="QLabel" name="label">
         <property name="minimumSize">
@@ -469,6 +475,12 @@
       </item>
       <item>
        <widget class="QWidget" name="depthContainer" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>200</width>
@@ -478,7 +490,7 @@
         <property name="maximumSize">
          <size>
           <width>3000</width>
-          <height>500</height>
+          <height>1000</height>
          </size>
         </property>
         <property name="autoFillBackground">
@@ -510,6 +522,12 @@
       </item>
       <item>
        <widget class="QWidget" name="statusContainer" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -519,7 +537,7 @@
         <property name="maximumSize">
          <size>
           <width>3000</width>
-          <height>500</height>
+          <height>1000</height>
          </size>
         </property>
         <property name="autoFillBackground">
